@@ -1,1032 +1,1205 @@
-<!DOCTYPE html>
+<!doctype html>
 <html lang="en">
-<head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>dg8ab learn - AI-Powered Study Assistant</title>
-    <!-- Meta description for SEO -->
-    <meta name="description" content="dg8ab learn - An AI-powered study assistant that generates study guides, summarizes conversations, and helps students learn more effectively.">
-    <meta name="author" content="Dhruv Gowda (@servers.dg8ab)">
-    
-    <!-- Add Puter.js SDK for AI capabilities -->
-    <script src="https://js.puter.com/v2/"></script>
-    
-    <!-- Include jsPDF for PDF generation functionality -->
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
-    
-    <!-- Include marked for Markdown rendering -->
-    <script src="https://cdn.jsdelivr.net/npm/marked@7.0.5/marked.min.js"></script>
-    
-    <!-- Include highlight.js for code syntax highlighting -->
-    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.8.0/styles/github.min.css">
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.8.0/highlight.min.js"></script>
-    
-    <!-- Embed all CSS styles in the head -->
-    <style>
-        :root {
-            --primary-color: #4a6fa5;
-            --primary-light: #6b8cb8;
-            --primary-dark: #304e7a;
-            --secondary-color: #f8f9fa;
-            --accent-color: #e3425a;
-            --text-color: #333333;
-            --text-light: #666666;
-            --bg-color: #ffffff;
-            --bg-light: #f8f9fa;
-            --border-color: #e0e0e0;
-            --success-color: #28a745;
-            --warning-color: #ffc107;
-            --error-color: #dc3545;
-            --info-color: #17a2b8;
-            --shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
-            --border-radius: 8px;
-            --transition: all 0.3s ease;
-            --font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
-        }
-
-        * {
-            margin: 0;
-            padding: 0;
-            box-sizing: border-box;
-        }
-
-        body {
-            font-family: var(--font-family);
-            color: var(--text-color);
-            background-color: var(--bg-color);
-            line-height: 1.6;
-            display: flex;
-            flex-direction: column;
-            min-height: 100vh;
-        }
-
-        a {
-            color: var(--primary-color);
-            text-decoration: none;
-        }
-
-        a:hover {
-            text-decoration: underline;
-        }
-
-        header {
-            background-color: var(--primary-color);
-            color: white;
-            padding: 1rem;
-            box-shadow: var(--shadow);
-            z-index: 100;
-        }
-
-        .header-content {
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-            max-width: 1200px;
-            margin: 0 auto;
-        }
-
-        .logo {
-            display: flex;
-            align-items: center;
-            font-size: 1.5rem;
-            font-weight: bold;
-        }
-
-        .logo-icon {
-            margin-right: 0.5rem;
-            font-size: 1.8rem;
-        }
-
-        .app-controls {
-            display: flex;
-            gap: 0.5rem;
-        }
-
-        .btn {
-            background-color: var(--primary-light);
-            color: white;
-            border: none;
-            padding: 0.4rem 0.8rem;
-            border-radius: var(--border-radius);
-            cursor: pointer;
-            font-size: 0.9rem;
-            display: flex;
-            align-items: center;
-            transition: var(--transition);
-        }
-
-        .btn:hover {
-            background-color: var(--primary-dark);
-        }
-
-        .btn-icon {
-            margin-right: 0.3rem;
-            font-size: 1rem;
-        }
-
-        .container {
-            display: flex;
-            flex: 1;
-            max-width: 1400px;
-            margin: 0 auto;
-            padding: 1rem;
-            width: 100%;
-        }
-
-        .sidebar {
-            width: 280px;
-            background-color: var(--bg-light);
-            border-right: 1px solid var(--border-color);
-            padding: 1rem;
-            display: flex;
-            flex-direction: column;
-            border-radius: var(--border-radius);
-            margin-right: 1rem;
-            height: calc(100vh - 140px);
-            overflow-y: auto;
-        }
-
-        .sessions-header {
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-            margin-bottom: 1rem;
-            padding-bottom: 0.5rem;
-            border-bottom: 1px solid var(--border-color);
-        }
-
-        .sessions-title {
-            font-size: 1.1rem;
-            font-weight: 600;
-        }
-
-        .btn-new-chat {
-            background-color: var(--primary-color);
-            padding: 0.3rem 0.6rem;
-            font-size: 0.8rem;
-        }
-
-        .sessions-list {
-            flex: 1;
-            overflow-y: auto;
-            margin-bottom: 1rem;
-        }
-
-        .session-item {
-            padding: 0.75rem;
-            border-radius: var(--border-radius);
-            margin-bottom: 0.5rem;
-            cursor: pointer;
-            border: 1px solid transparent;
-            transition: var(--transition);
-        }
-
-        .session-item:hover {
-            background-color: rgba(74, 111, 165, 0.1);
-        }
-
-        .session-item.active {
-            background-color: rgba(74, 111, 165, 0.2);
-            border-color: var(--primary-light);
-        }
-
-        .session-title {
-            font-size: 0.95rem;
-            font-weight: 500;
-            white-space: nowrap;
-            overflow: hidden;
-            text-overflow: ellipsis;
-        }
-
-        .session-date {
-            font-size: 0.75rem;
-            color: var(--text-light);
-            margin-top: 0.25rem;
-        }
-
-        .chat-container {
-            flex: 1;
-            display: flex;
-            flex-direction: column;
-            height: calc(100vh - 140px);
-            border: 1px solid var(--border-color);
-            border-radius: var(--border-radius);
-            background-color: var(--bg-color);
-            box-shadow: 0 2px 4px rgba(0, 0, 0, 0.05);
-        }
-
-        .chat-messages {
-            flex: 1;
-            overflow-y: auto;
-            padding: 1rem;
-        }
-
-        .welcome-message {
-            text-align: center;
-            padding: 2rem;
-            color: var(--text-light);
-        }
-
-        .welcome-title {
-            font-size: 1.8rem;
-            margin-bottom: 1rem;
-            color: var(--primary-color);
-        }
-
-        .welcome-description {
-            font-size: 1.1rem;
-            max-width: 600px;
-            margin: 0 auto 2rem auto;
-        }
-
-        .welcome-features {
-            display: flex;
-            flex-wrap: wrap;
-            justify-content: center;
-            gap: 1.5rem;
-            margin-bottom: 2rem;
-        }
-
-        .feature-card {
-            background-color: var(--bg-light);
-            border-radius: var(--border-radius);
-            padding: 1.5rem;
-            width: 250px;
-            box-shadow: var(--shadow);
-            transition: var(--transition);
-        }
-
-        .feature-card:hover {
-            transform: translateY(-5px);
-        }
-
-        .feature-icon {
-            font-size: 2rem;
-            color: var(--primary-color);
-            margin-bottom: 1rem;
-        }
-
-        .feature-title {
-            font-size: 1.2rem;
-            font-weight: 600;
-            margin-bottom: 0.5rem;
-            color: var(--primary-dark);
-        }
-
-        .message {
-            display: flex;
-            margin-bottom: 1.5rem;
-            animation: fadeIn 0.3s ease;
-        }
-
-        @keyframes fadeIn {
-            from { opacity: 0; transform: translateY(10px); }
-            to { opacity: 1; transform: translateY(0); }
-        }
-
-        .message-avatar {
-            width: 36px;
-            height: 36px;
-            border-radius: 50%;
-            background-color: var(--primary-color);
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            color: white;
-            font-weight: bold;
-            margin-right: 12px;
-            flex-shrink: 0;
-        }
-
-        .message-avatar.ai {
-            background-color: var(--accent-color);
-        }
-
-        .message-content {
-            flex: 1;
-            padding: 1rem;
-            border-radius: var(--border-radius);
-            background-color: var(--bg-light);
-            box-shadow: 0 1px 2px rgba(0, 0, 0, 0.05);
-        }
-
-        .message.user .message-content {
-            background-color: rgba(74, 111, 165, 0.1);
-        }
-
-        .message-header {
-            display: flex;
-            justify-content: space-between;
-            margin-bottom: 0.5rem;
-        }
-
-        .message-sender {
-            font-weight: 600;
-            color: var(--primary-dark);
-        }
-
-        .message-time {
-            font-size: 0.8rem;
-            color: var(--text-light);
-        }
-
-        .message-text {
-            line-height: 1.6;
-            white-space: pre-wrap;
-        }
-
-        .message-text p {
-            margin-bottom: 1rem;
-        }
-
-        .message-text p:last-child {
-            margin-bottom: 0;
-        }
-
-        .message-text pre {
-            background-color: #f3f4f6;
-            border-radius: 4px;
-            padding: 0.75rem;
-            font-family: monospace;
-            overflow-x: auto;
-            margin: 1rem 0;
-        }
-
-        .message-text code {
-            font-family: monospace;
-            background-color: #f3f4f6;
-            padding: 0.1rem 0.3rem;
-            border-radius: 3px;
-        }
-
-        .message-text ul, .message-text ol {
-            margin: 1rem 0;
-            padding-left: 2rem;
-        }
-
-        .message-text img {
-            max-width: 100%;
-            border-radius: 4px;
-            margin: 1rem 0;
-        }
-
-        .message-text table {
-            border-collapse: collapse;
-            width: 100%;
-            margin: 1rem 0;
-        }
-
-        .message-text th, .message-text td {
-            border: 1px solid #e5e7eb;
-            padding: 0.5rem;
-            text-align: left;
-        }
-
-        .message-text th {
-            background-color: #f9fafb;
-        }
-
-        .typing-indicator {
-            display: flex;
-            padding: 1rem;
-            align-items: center;
-        }
-
-        .typing-animation {
-            display: flex;
-            align-items: center;
-        }
-
-        .typing-dot {
-            width: 8px;
-            height: 8px;
-            background-color: var(--text-light);
-            border-radius: 50%;
-            margin-right: 4px;
-            animation: typingAnimation 1.4s infinite ease-in-out;
-        }
-
-        .typing-dot:nth-child(1) { animation-delay: 0s; }
-        .typing-dot:nth-child(2) { animation-delay: 0.2s; }
-        .typing-dot:nth-child(3) { animation-delay: 0.4s; }
-
-        @keyframes typingAnimation {
-            0%, 100% { transform: scale(1); opacity: 0.6; }
-            50% { transform: scale(1.5); opacity: 1; }
-        }
-
-        .chat-input-container {
-            border-top: 1px solid var(--border-color);
-            padding: 1rem;
-            background-color: var(--bg-light);
-            border-bottom-left-radius: var(--border-radius);
-            border-bottom-right-radius: var(--border-radius);
-        }
-
-        .chat-input-wrapper {
-            display: flex;
-            position: relative;
-        }
-
-        .chat-textarea {
-            flex: 1;
-            border: 1px solid var(--border-color);
-            border-radius: var(--border-radius);
-            padding: 0.75rem 1rem;
-            padding-right: 3.5rem;
-            font-family: var(--font-family);
-            font-size: 1rem;
-            resize: none;
-            height: 50px;
-            max-height: 200px;
-            transition: var(--transition);
-        }
-
-        .chat-textarea:focus {
-            outline: none;
-            border-color: var(--primary-color);
-            box-shadow: 0 0 0 2px rgba(74, 111, 165, 0.2);
-        }
-
-        .chat-send-btn {
-            position: absolute;
-            right: 10px;
-            bottom: 10px;
-            width: 32px;
-            height: 32px;
-            border-radius: 50%;
-            background-color: var(--primary-color);
-            color: white;
-            border: none;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            cursor: pointer;
-            transition: var(--transition);
-        }
-
-        .chat-send-btn:hover {
-            background-color: var(--primary-dark);
-        }
-
-        .chat-send-btn:disabled {
-            background-color: var(--text-light);
-            cursor: not-allowed;
-        }
-
-        /* Study Guide Modal */
-        .modal-overlay {
-            position: fixed;
-            top: 0;
-            left: 0;
-            right: 0;
-            bottom: 0;
-            background-color: rgba(0, 0, 0, 0.5);
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            z-index: 1000;
-            opacity: 0;
-            visibility: hidden;
-            transition: all 0.3s ease;
-        }
-
-        .modal-overlay.active {
-            opacity: 1;
-            visibility: visible;
-        }
-
-        .modal {
-            background-color: var(--bg-color);
-            border-radius: var(--border-radius);
-            width: 90%;
-            max-width: 800px;
-            max-height: 90vh;
-            overflow-y: auto;
-            padding: 2rem;
-            box-shadow: 0 4px 20px rgba(0, 0, 0, 0.15);
-            transform: translateY(-20px);
-            transition: all 0.3s ease;
-        }
-
-        .modal-overlay.active .modal {
-            transform: translateY(0);
-        }
-
-        .modal-header {
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-            margin-bottom: 1.5rem;
-            padding-bottom: 1rem;
-            border-bottom: 1px solid var(--border-color);
-        }
-
-        .modal-title {
-            font-size: 1.5rem;
-            font-weight: 600;
-            color: var(--primary-dark);
-        }
-
-        .modal-close {
-            background: none;
-            border: none;
-            font-size: 1.5rem;
-            cursor: pointer;
-            color: var(--text-light);
-            transition: var(--transition);
-        }
-
-        .modal-close:hover {
-            color: var(--accent-color);
-        }
-
-        .study-guide-form {
-            margin-bottom: 1.5rem;
-        }
-
-        .form-group {
-            margin-bottom: 1.2rem;
-        }
-
-        .form-label {
-            display: block;
-            font-weight: 500;
-            margin-bottom: 0.5rem;
-        }
-
-        .form-input {
-            width: 100%;
-            padding: 0.75rem;
-            border: 1px solid var(--border-color);
-            border-radius: var(--border-radius);
-            font-family: var(--font-family);
-            font-size: 1rem;
-            transition: var(--transition);
-        }
-
-        .form-input:focus {
-            outline: none;
-            border-color: var(--primary-color);
-            box-shadow: 0 0 0 2px rgba(74, 111, 165, 0.2);
-        }
-
-        .form-select {
-            width: 100%;
-            padding: 0.75rem;
-            border: 1px solid var(--border-color);
-            border-radius: var(--border-radius);
-            font-family: var(--font-family);
-            font-size: 1rem;
-            appearance: none;
-            background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='24' height='24' viewBox='0 0 24 24' fill='none' stroke='%23666666' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpolyline points='6 9 12 15 18 9'%3E%3C/polyline%3E%3C/svg%3E");
-            background-repeat: no-repeat;
-            background-position: right 0.75rem center;
-            background-size: 1em;
-        }
-
-        .form-checkbox-group {
-            display: flex;
-            gap: 1rem;
-            margin-top: 0.5rem;
-        }
-
-        .form-checkbox-item {
-            display: flex;
-            align-items: center;
-        }
-
-        .form-checkbox {
-            margin-right: 0.5rem;
-        }
-
-        .btn-submit {
-            background-color: var(--primary-color);
-            color: white;
-            border: none;
-            padding: 0.75rem 1.5rem;
-            border-radius: var(--border-radius);
-            font-size: 1rem;
-            cursor: pointer;
-            transition: var(--transition);
-            width: 100%;
-        }
-
-        .btn-submit:hover {
-            background-color: var(--primary-dark);
-        }
-
-        .btn-submit:disabled {
-            background-color: var(--text-light);
-            cursor: not-allowed;
-        }
-
-        /* PDF Export Button */
-        .pdf-export-btn {
-            display: inline-flex;
-            align-items: center;
-            background-color: var(--primary-light);
-            color: white;
-            border: none;
-            padding: 0.5rem 1rem;
-            border-radius: var(--border-radius);
-            margin-top: 1rem;
-            cursor: pointer;
-            font-size: 0.9rem;
-            transition: var(--transition);
-        }
-
-        .pdf-export-btn:hover {
-            background-color: var(--primary-dark);
-        }
-
-        /* Notification */
-        .notification {
-            position: fixed;
-            bottom: 20px;
-            right: 20px;
-            padding: 1rem 1.5rem;
-            border-radius: var(--border-radius);
-            background-color: var(--primary-color);
-            color: white;
-            box-shadow: var(--shadow);
-            z-index: 1000;
-            opacity: 0;
-            transform: translateY(10px);
-            transition: all 0.3s ease;
-        }
-
-        .notification.show {
-            opacity: 1;
-            transform: translateY(0);
-        }
-
-        .notification.success {
-            background-color: var(--success-color);
-        }
-
-        .notification.error {
-            background-color: var(--error-color);
-        }
-
-        .notification.info {
-            background-color: var(--info-color);
-        }
-
-        /* Responsive Styles */
-        @media (max-width: 992px) {
-            .container {
+    <head>
+        <meta charset="UTF-8" />
+        <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+        <title>dg8ab learn - AI-Powered Study Assistant</title>
+        <!-- Meta description for SEO -->
+        <meta
+            name="description"
+            content="dg8ab learn - An AI-powered study assistant that generates study guides, summarizes conversations, and helps students learn more effectively."
+        />
+        <meta name="author" content="Dhruv Gowda (@servers.dg8ab)" />
+
+        <!-- Add Puter.js SDK for AI capabilities -->
+        <script
+            src="https://js.puter.com/v2/"
+            onerror="console.error('Failed to load Puter.js script');"
+            onload="console.log('Puter.js script loaded successfully');"
+        ></script>
+
+        <!-- Include jsPDF for PDF generation functionality -->
+        <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+
+        <!-- Include marked for Markdown rendering -->
+        <script src="https://cdn.jsdelivr.net/npm/marked@7.0.5/marked.min.js"></script>
+
+        <!-- Include highlight.js for code syntax highlighting -->
+        <link
+            rel="stylesheet"
+            href="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.8.0/styles/github.min.css"
+        />
+        <script src="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.8.0/highlight.min.js"></script>
+
+        <!-- Embed all CSS styles in the head -->
+        <style>
+            :root {
+                --primary-color: #4a6fa5;
+                --primary-light: #6b8cb8;
+                --primary-dark: #304e7a;
+                --secondary-color: #f8f9fa;
+                --accent-color: #e3425a;
+                --text-color: #333333;
+                --text-light: #666666;
+                --bg-color: #ffffff;
+                --bg-light: #f8f9fa;
+                --border-color: #e0e0e0;
+                --success-color: #28a745;
+                --warning-color: #ffc107;
+                --error-color: #dc3545;
+                --info-color: #17a2b8;
+                --shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+                --border-radius: 8px;
+                --transition: all 0.3s ease;
+                --font-family: "Segoe UI", Tahoma, Geneva, Verdana, sans-serif;
+            }
+
+            * {
+                margin: 0;
+                padding: 0;
+                box-sizing: border-box;
+            }
+
+            body {
+                font-family: var(--font-family);
+                color: var(--text-color);
+                background-color: var(--bg-color);
+                line-height: 1.6;
+                display: flex;
                 flex-direction: column;
+                min-height: 100vh;
             }
 
-            .sidebar {
-                width: 100%;
-                margin-right: 0;
-                margin-bottom: 1rem;
-                height: auto;
-                max-height: 300px;
+            a {
+                color: var(--primary-color);
+                text-decoration: none;
             }
 
-            .chat-container {
-                height: calc(100vh - 420px);
+            a:hover {
+                text-decoration: underline;
             }
-        }
 
-        @media (max-width: 768px) {
+            header {
+                background-color: var(--primary-color);
+                color: white;
+                padding: 1rem;
+                box-shadow: var(--shadow);
+                z-index: 100;
+            }
+
             .header-content {
-                flex-direction: column;
-                gap: 1rem;
+                display: flex;
+                justify-content: space-between;
+                align-items: center;
+                max-width: 1200px;
+                margin: 0 auto;
+            }
+
+            .logo {
+                display: flex;
+                align-items: center;
+                font-size: 1.5rem;
+                font-weight: bold;
+            }
+
+            .logo-icon {
+                margin-right: 0.5rem;
+                font-size: 1.8rem;
             }
 
             .app-controls {
+                display: flex;
+                gap: 0.5rem;
+            }
+
+            .btn {
+                background-color: var(--primary-light);
+                color: white;
+                border: none;
+                padding: 0.4rem 0.8rem;
+                border-radius: var(--border-radius);
+                cursor: pointer;
+                font-size: 0.9rem;
+                display: flex;
+                align-items: center;
+                transition: var(--transition);
+            }
+
+            .btn:hover {
+                background-color: var(--primary-dark);
+            }
+
+            .btn-icon {
+                margin-right: 0.3rem;
+                font-size: 1rem;
+            }
+
+            .container {
+                display: flex;
+                flex: 1;
+                max-width: 1400px;
+                margin: 0 auto;
+                padding: 1rem;
                 width: 100%;
-                justify-content: center;
+            }
+
+            .sidebar {
+                width: 280px;
+                background-color: var(--bg-light);
+                border-right: 1px solid var(--border-color);
+                padding: 1rem;
+                display: flex;
+                flex-direction: column;
+                border-radius: var(--border-radius);
+                margin-right: 1rem;
+                height: calc(100vh - 140px);
+                overflow-y: auto;
+            }
+
+            .sessions-header {
+                display: flex;
+                justify-content: space-between;
+                align-items: center;
+                margin-bottom: 1rem;
+                padding-bottom: 0.5rem;
+                border-bottom: 1px solid var(--border-color);
+            }
+
+            .sessions-title {
+                font-size: 1.1rem;
+                font-weight: 600;
+            }
+
+            .btn-new-chat {
+                background-color: var(--primary-color);
+                padding: 0.3rem 0.6rem;
+                font-size: 0.8rem;
+            }
+
+            .sessions-list {
+                flex: 1;
+                overflow-y: auto;
+                margin-bottom: 1rem;
+            }
+
+            .session-item {
+                padding: 0.75rem;
+                border-radius: var(--border-radius);
+                margin-bottom: 0.5rem;
+                cursor: pointer;
+                border: 1px solid transparent;
+                transition: var(--transition);
+            }
+
+            .session-item:hover {
+                background-color: rgba(74, 111, 165, 0.1);
+            }
+
+            .session-item.active {
+                background-color: rgba(74, 111, 165, 0.2);
+                border-color: var(--primary-light);
+            }
+
+            .session-title {
+                font-size: 0.95rem;
+                font-weight: 500;
+                white-space: nowrap;
+                overflow: hidden;
+                text-overflow: ellipsis;
+            }
+
+            .session-date {
+                font-size: 0.75rem;
+                color: var(--text-light);
+                margin-top: 0.25rem;
+            }
+
+            .chat-container {
+                flex: 1;
+                display: flex;
+                flex-direction: column;
+                height: calc(100vh - 140px);
+                border: 1px solid var(--border-color);
+                border-radius: var(--border-radius);
+                background-color: var(--bg-color);
+                box-shadow: 0 2px 4px rgba(0, 0, 0, 0.05);
+            }
+
+            .chat-messages {
+                flex: 1;
+                overflow-y: auto;
+                padding: 1rem;
+            }
+
+            .welcome-message {
+                text-align: center;
+                padding: 2rem;
+                color: var(--text-light);
+            }
+
+            .welcome-title {
+                font-size: 1.8rem;
+                margin-bottom: 1rem;
+                color: var(--primary-color);
+            }
+
+            .welcome-description {
+                font-size: 1.1rem;
+                max-width: 600px;
+                margin: 0 auto 2rem auto;
             }
 
             .welcome-features {
-                flex-direction: column;
-                align-items: center;
+                display: flex;
+                flex-wrap: wrap;
+                justify-content: center;
+                gap: 1.5rem;
+                margin-bottom: 2rem;
             }
 
             .feature-card {
-                width: 100%;
+                background-color: var(--bg-light);
+                border-radius: var(--border-radius);
+                padding: 1.5rem;
+                width: 250px;
+                box-shadow: var(--shadow);
+                transition: var(--transition);
             }
-        }
 
-        @media (max-width: 576px) {
-            .modal {
+            .feature-card:hover {
+                transform: translateY(-5px);
+            }
+
+            .feature-icon {
+                font-size: 2rem;
+                color: var(--primary-color);
+                margin-bottom: 1rem;
+            }
+
+            .feature-title {
+                font-size: 1.2rem;
+                font-weight: 600;
+                margin-bottom: 0.5rem;
+                color: var(--primary-dark);
+            }
+
+            .message {
+                display: flex;
+                margin-bottom: 1.5rem;
+                animation: fadeIn 0.3s ease;
+            }
+
+            @keyframes fadeIn {
+                from {
+                    opacity: 0;
+                    transform: translateY(10px);
+                }
+                to {
+                    opacity: 1;
+                    transform: translateY(0);
+                }
+            }
+
+            .message-avatar {
+                width: 36px;
+                height: 36px;
+                border-radius: 50%;
+                background-color: var(--primary-color);
+                display: flex;
+                align-items: center;
+                justify-content: center;
+                color: white;
+                font-weight: bold;
+                margin-right: 12px;
+                flex-shrink: 0;
+            }
+
+            .message-avatar.ai {
+                background-color: var(--accent-color);
+            }
+
+            .message-content {
+                flex: 1;
                 padding: 1rem;
-                width: 95%;
+                border-radius: var(--border-radius);
+                background-color: var(--bg-light);
+                box-shadow: 0 1px 2px rgba(0, 0, 0, 0.05);
+            }
+
+            .message.user .message-content {
+                background-color: rgba(74, 111, 165, 0.1);
+            }
+
+            .message-header {
+                display: flex;
+                justify-content: space-between;
+                margin-bottom: 0.5rem;
+            }
+
+            .message-sender {
+                font-weight: 600;
+                color: var(--primary-dark);
+            }
+
+            .message-time {
+                font-size: 0.8rem;
+                color: var(--text-light);
+            }
+
+            .message-text {
+                line-height: 1.6;
+                white-space: pre-wrap;
+            }
+
+            .message-text p {
+                margin-bottom: 1rem;
+            }
+
+            .message-text p:last-child {
+                margin-bottom: 0;
+            }
+
+            .message-text pre {
+                background-color: #f3f4f6;
+                border-radius: 4px;
+                padding: 0.75rem;
+                font-family: monospace;
+                overflow-x: auto;
+                margin: 1rem 0;
+            }
+
+            .message-text code {
+                font-family: monospace;
+                background-color: #f3f4f6;
+                padding: 0.1rem 0.3rem;
+                border-radius: 3px;
+            }
+
+            .message-text ul,
+            .message-text ol {
+                margin: 1rem 0;
+                padding-left: 2rem;
+            }
+
+            .message-text img {
+                max-width: 100%;
+                border-radius: 4px;
+                margin: 1rem 0;
+            }
+
+            .message-text table {
+                border-collapse: collapse;
+                width: 100%;
+                margin: 1rem 0;
+            }
+
+            .message-text th,
+            .message-text td {
+                border: 1px solid #e5e7eb;
+                padding: 0.5rem;
+                text-align: left;
+            }
+
+            .message-text th {
+                background-color: #f9fafb;
+            }
+
+            .typing-indicator {
+                display: flex;
+                padding: 1rem;
+                align-items: center;
+            }
+
+            .typing-animation {
+                display: flex;
+                align-items: center;
+            }
+
+            .typing-dot {
+                width: 8px;
+                height: 8px;
+                background-color: var(--text-light);
+                border-radius: 50%;
+                margin-right: 4px;
+                animation: typingAnimation 1.4s infinite ease-in-out;
+            }
+
+            .typing-dot:nth-child(1) {
+                animation-delay: 0s;
+            }
+            .typing-dot:nth-child(2) {
+                animation-delay: 0.2s;
+            }
+            .typing-dot:nth-child(3) {
+                animation-delay: 0.4s;
+            }
+
+            @keyframes typingAnimation {
+                0%,
+                100% {
+                    transform: scale(1);
+                    opacity: 0.6;
+                }
+                50% {
+                    transform: scale(1.5);
+                    opacity: 1;
+                }
+            }
+
+            .chat-input-container {
+                border-top: 1px solid var(--border-color);
+                padding: 1rem;
+                background-color: var(--bg-light);
+                border-bottom-left-radius: var(--border-radius);
+                border-bottom-right-radius: var(--border-radius);
+            }
+
+            .chat-input-wrapper {
+                display: flex;
+                position: relative;
+            }
+
+            .chat-textarea {
+                flex: 1;
+                border: 1px solid var(--border-color);
+                border-radius: var(--border-radius);
+                padding: 0.75rem 1rem;
+                padding-right: 3.5rem;
+                font-family: var(--font-family);
+                font-size: 1rem;
+                resize: none;
+                height: 50px;
+                max-height: 200px;
+                transition: var(--transition);
+            }
+
+            .chat-textarea:focus {
+                outline: none;
+                border-color: var(--primary-color);
+                box-shadow: 0 0 0 2px rgba(74, 111, 165, 0.2);
+            }
+
+            .chat-send-btn {
+                position: absolute;
+                right: 10px;
+                bottom: 10px;
+                width: 32px;
+                height: 32px;
+                border-radius: 50%;
+                background-color: var(--primary-color);
+                color: white;
+                border: none;
+                display: flex;
+                align-items: center;
+                justify-content: center;
+                cursor: pointer;
+                transition: var(--transition);
+            }
+
+            .chat-send-btn:hover {
+                background-color: var(--primary-dark);
+            }
+
+            .chat-send-btn:disabled {
+                background-color: var(--text-light);
+                cursor: not-allowed;
+            }
+
+            /* Study Guide Modal */
+            .modal-overlay {
+                position: fixed;
+                top: 0;
+                left: 0;
+                right: 0;
+                bottom: 0;
+                background-color: rgba(0, 0, 0, 0.5);
+                display: flex;
+                align-items: center;
+                justify-content: center;
+                z-index: 1000;
+                opacity: 0;
+                visibility: hidden;
+                transition: all 0.3s ease;
+            }
+
+            .modal-overlay.active {
+                opacity: 1;
+                visibility: visible;
+            }
+
+            .modal {
+                background-color: var(--bg-color);
+                border-radius: var(--border-radius);
+                width: 90%;
+                max-width: 800px;
+                max-height: 90vh;
+                overflow-y: auto;
+                padding: 2rem;
+                box-shadow: 0 4px 20px rgba(0, 0, 0, 0.15);
+                transform: translateY(-20px);
+                transition: all 0.3s ease;
+            }
+
+            .modal-overlay.active .modal {
+                transform: translateY(0);
+            }
+
+            .modal-header {
+                display: flex;
+                justify-content: space-between;
+                align-items: center;
+                margin-bottom: 1.5rem;
+                padding-bottom: 1rem;
+                border-bottom: 1px solid var(--border-color);
             }
 
             .modal-title {
-                font-size: 1.2rem;
+                font-size: 1.5rem;
+                font-weight: 600;
+                color: var(--primary-dark);
             }
-        }
 
-        /* Utility Classes */
-        .mt-1 { margin-top: 0.25rem; }
-        .mt-2 { margin-top: 0.5rem; }
-        .mt-3 { margin-top: 1rem; }
-        .mt-4 { margin-top: 1.5rem; }
-        .mt-5 { margin-top: 2rem; }
+            .modal-close {
+                background: none;
+                border: none;
+                font-size: 1.5rem;
+                cursor: pointer;
+                color: var(--text-light);
+                transition: var(--transition);
+            }
 
-        .mb-1 { margin-bottom: 0.25rem; }
-        .mb-2 { margin-bottom: 0.5rem; }
-        .mb-3 { margin-bottom: 1rem; }
-        .mb-4 { margin-bottom: 1.5rem; }
-        .mb-5 { margin-bottom: 2rem; }
+            .modal-close:hover {
+                color: var(--accent-color);
+            }
 
-        .ml-1 { margin-left: 0.25rem; }
-        .ml-2 { margin-left: 0.5rem; }
-        .ml-3 { margin-left: 1rem; }
+            .study-guide-form {
+                margin-bottom: 1.5rem;
+            }
 
-        .mr-1 { margin-right: 0.25rem; }
-        .mr-2 { margin-right: 0.5rem; }
-        .mr-3 { margin-right: 1rem; }
+            .form-group {
+                margin-bottom: 1.2rem;
+            }
 
-        .p-1 { padding: 0.25rem; }
-        .p-2 { padding: 0.5rem; }
-        .p-3 { padding: 1rem; }
-        .p-4 { padding: 1.5rem; }
-        .p-5 { padding: 2rem; }
+            .form-label {
+                display: block;
+                font-weight: 500;
+                margin-bottom: 0.5rem;
+            }
 
-        .text-center { text-align: center; }
-        .text-right { text-align: right; }
-        .text-left { text-align: left; }
+            .form-input {
+                width: 100%;
+                padding: 0.75rem;
+                border: 1px solid var(--border-color);
+                border-radius: var(--border-radius);
+                font-family: var(--font-family);
+                font-size: 1rem;
+                transition: var(--transition);
+            }
 
-        .font-bold { font-weight: bold; }
-        .font-semibold { font-weight: 600; }
+            .form-input:focus {
+                outline: none;
+                border-color: var(--primary-color);
+                box-shadow: 0 0 0 2px rgba(74, 111, 165, 0.2);
+            }
 
-        .text-sm { font-size: 0.875rem; }
-        .text-lg { font-size: 1.125rem; }
-        .text-xl { font-size: 1.25rem; }
+            .form-select {
+                width: 100%;
+                padding: 0.75rem;
+                border: 1px solid var(--border-color);
+                border-radius: var(--border-radius);
+                font-family: var(--font-family);
+                font-size: 1rem;
+                appearance: none;
+                background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='24' height='24' viewBox='0 0 24 24' fill='none' stroke='%23666666' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpolyline points='6 9 12 15 18 9'%3E%3C/polyline%3E%3C/svg%3E");
+                background-repeat: no-repeat;
+                background-position: right 0.75rem center;
+                background-size: 1em;
+            }
 
-        .shadow { box-shadow: var(--shadow); }
-        .rounded { border-radius: var(--border-radius); }
+            .form-checkbox-group {
+                display: flex;
+                gap: 1rem;
+                margin-top: 0.5rem;
+            }
 
-        .bg-light { background-color: var(--bg-light); }
-        .bg-primary { background-color: var(--primary-color); }
-        .text-primary { color: var(--primary-color); }
-        .text-light { color: var(--text-light); }
+            .form-checkbox-item {
+                display: flex;
+                align-items: center;
+            }
 
-        .hidden { display: none; }
-    </style>
-</head>
-<body>
-    <header>
-        <div class="header-content">
-            <div class="logo">
-                <span class="logo-icon">📚</span>
-                <span>dg8ab learn</span>
-            </div>
-            
-            <div class="app-controls">
-                <button id="create-study-guide-btn" class="btn">
-                    <span class="btn-icon">📝</span>
-                    <span>Create Study Guide</span>
-                </button>
-                <button id="summarize-btn" class="btn">
-                    <span class="btn-icon">📋</span>
-                    <span>Summarize</span>
-                </button>
-                <button id="export-btn" class="btn">
-                    <span class="btn-icon">📤</span>
-                    <span>Export</span>
-                </button>
-            </div>
-        </div>
-    </header>
-    
-    <div class="container">
-        <div class="sidebar">
-            <div class="sessions-header">
-                <h3 class="sessions-title">Recent Sessions</h3>
-                <button id="new-chat-btn" class="btn btn-new-chat">New Chat</button>
-            </div>
-            
-            <div id="sessions-list" class="sessions-list">
-                <!-- Sessions will be generated here -->
-            </div>
-        </div>
-        
-        <div class="chat-container">
-            <div id="chat-messages" class="chat-messages">
-                <!-- Welcome message will be displayed initially -->
-            </div>
-            
-            <div id="typing-indicator" class="typing-indicator hidden">
-                <div class="message-avatar ai">AI</div>
-                <div class="typing-animation">
-                    <div class="typing-dot"></div>
-                    <div class="typing-dot"></div>
-                    <div class="typing-dot"></div>
+            .form-checkbox {
+                margin-right: 0.5rem;
+            }
+
+            .btn-submit {
+                background-color: var(--primary-color);
+                color: white;
+                border: none;
+                padding: 0.75rem 1.5rem;
+                border-radius: var(--border-radius);
+                font-size: 1rem;
+                cursor: pointer;
+                transition: var(--transition);
+                width: 100%;
+            }
+
+            .btn-submit:hover {
+                background-color: var(--primary-dark);
+            }
+
+            .btn-submit:disabled {
+                background-color: var(--text-light);
+                cursor: not-allowed;
+            }
+
+            /* PDF Export Button */
+            .pdf-export-btn {
+                display: inline-flex;
+                align-items: center;
+                background-color: var(--primary-light);
+                color: white;
+                border: none;
+                padding: 0.5rem 1rem;
+                border-radius: var(--border-radius);
+                margin-top: 1rem;
+                cursor: pointer;
+                font-size: 0.9rem;
+                transition: var(--transition);
+            }
+
+            .pdf-export-btn:hover {
+                background-color: var(--primary-dark);
+            }
+
+            /* Notification */
+            .notification {
+                position: fixed;
+                bottom: 20px;
+                right: 20px;
+                padding: 1rem 1.5rem;
+                border-radius: var(--border-radius);
+                background-color: var(--primary-color);
+                color: white;
+                box-shadow: var(--shadow);
+                z-index: 1000;
+                opacity: 0;
+                transform: translateY(10px);
+                transition: all 0.3s ease;
+            }
+
+            .notification.show {
+                opacity: 1;
+                transform: translateY(0);
+            }
+
+            .notification.success {
+                background-color: var(--success-color);
+            }
+
+            .notification.error {
+                background-color: var(--error-color);
+            }
+
+            .notification.info {
+                background-color: var(--info-color);
+            }
+
+            /* Responsive Styles */
+            @media (max-width: 992px) {
+                .container {
+                    flex-direction: column;
+                }
+
+                .sidebar {
+                    width: 100%;
+                    margin-right: 0;
+                    margin-bottom: 1rem;
+                    height: auto;
+                    max-height: 300px;
+                }
+
+                .chat-container {
+                    height: calc(100vh - 420px);
+                }
+            }
+
+            @media (max-width: 768px) {
+                .header-content {
+                    flex-direction: column;
+                    gap: 1rem;
+                }
+
+                .app-controls {
+                    width: 100%;
+                    justify-content: center;
+                }
+
+                .welcome-features {
+                    flex-direction: column;
+                    align-items: center;
+                }
+
+                .feature-card {
+                    width: 100%;
+                }
+            }
+
+            @media (max-width: 576px) {
+                .modal {
+                    padding: 1rem;
+                    width: 95%;
+                }
+
+                .modal-title {
+                    font-size: 1.2rem;
+                }
+            }
+
+            /* Utility Classes */
+            .mt-1 {
+                margin-top: 0.25rem;
+            }
+            .mt-2 {
+                margin-top: 0.5rem;
+            }
+            .mt-3 {
+                margin-top: 1rem;
+            }
+            .mt-4 {
+                margin-top: 1.5rem;
+            }
+            .mt-5 {
+                margin-top: 2rem;
+            }
+
+            .mb-1 {
+                margin-bottom: 0.25rem;
+            }
+            .mb-2 {
+                margin-bottom: 0.5rem;
+            }
+            .mb-3 {
+                margin-bottom: 1rem;
+            }
+            .mb-4 {
+                margin-bottom: 1.5rem;
+            }
+            .mb-5 {
+                margin-bottom: 2rem;
+            }
+
+            .ml-1 {
+                margin-left: 0.25rem;
+            }
+            .ml-2 {
+                margin-left: 0.5rem;
+            }
+            .ml-3 {
+                margin-left: 1rem;
+            }
+
+            .mr-1 {
+                margin-right: 0.25rem;
+            }
+            .mr-2 {
+                margin-right: 0.5rem;
+            }
+            .mr-3 {
+                margin-right: 1rem;
+            }
+
+            .p-1 {
+                padding: 0.25rem;
+            }
+            .p-2 {
+                padding: 0.5rem;
+            }
+            .p-3 {
+                padding: 1rem;
+            }
+            .p-4 {
+                padding: 1.5rem;
+            }
+            .p-5 {
+                padding: 2rem;
+            }
+
+            .text-center {
+                text-align: center;
+            }
+            .text-right {
+                text-align: right;
+            }
+            .text-left {
+                text-align: left;
+            }
+
+            .font-bold {
+                font-weight: bold;
+            }
+            .font-semibold {
+                font-weight: 600;
+            }
+
+            .text-sm {
+                font-size: 0.875rem;
+            }
+            .text-lg {
+                font-size: 1.125rem;
+            }
+            .text-xl {
+                font-size: 1.25rem;
+            }
+
+            .shadow {
+                box-shadow: var(--shadow);
+            }
+            .rounded {
+                border-radius: var(--border-radius);
+            }
+
+            .bg-light {
+                background-color: var(--bg-light);
+            }
+            .bg-primary {
+                background-color: var(--primary-color);
+            }
+            .text-primary {
+                color: var(--primary-color);
+            }
+            .text-light {
+                color: var(--text-light);
+            }
+
+            .hidden {
+                display: none;
+            }
+        </style>
+    </head>
+    <body>
+        <header>
+            <div class="header-content">
+                <div class="logo">
+                    <span class="logo-icon">📚</span>
+                    <span>dg8ab learn</span>
                 </div>
-            </div>
-            
-            <div class="chat-input-container">
-                <div class="chat-input-wrapper">
-                    <textarea 
-                        id="chat-textarea" 
-                        class="chat-textarea" 
-                        placeholder="Type your message here..."
-                        rows="1"
-                    ></textarea>
-                    <button id="chat-send-btn" class="chat-send-btn" disabled>
-                        ➤
+
+                <div class="app-controls">
+                    <button id="create-study-guide-btn" class="btn">
+                        <span class="btn-icon">📝</span>
+                        <span>Create Study Guide</span>
+                    </button>
+                    <button id="summarize-btn" class="btn">
+                        <span class="btn-icon">📋</span>
+                        <span>Summarize</span>
+                    </button>
+                    <button id="export-btn" class="btn">
+                        <span class="btn-icon">📤</span>
+                        <span>Export</span>
                     </button>
                 </div>
             </div>
-        </div>
-    </div>
-    
-    <!-- Study Guide Modal -->
-    <div id="study-guide-modal" class="modal-overlay">
-        <div class="modal">
-            <div class="modal-header">
-                <h2 class="modal-title">Create Study Guide</h2>
-                <button id="modal-close" class="modal-close">×</button>
+        </header>
+
+        <div class="container">
+            <div class="sidebar">
+                <div class="sessions-header">
+                    <h3 class="sessions-title">Recent Sessions</h3>
+                    <button id="new-chat-btn" class="btn btn-new-chat">
+                        New Chat
+                    </button>
+                </div>
+
+                <div id="sessions-list" class="sessions-list">
+                    <!-- Sessions will be generated here -->
+                </div>
             </div>
-            
-            <form id="study-guide-form" class="study-guide-form">
-                <div class="form-group">
-                    <label for="topic" class="form-label">Topic</label>
-                    <input type="text" id="topic" class="form-input" required placeholder="e.g., Photosynthesis, World War II, Calculus">
+
+            <div class="chat-container">
+                <div id="chat-messages" class="chat-messages">
+                    <!-- Welcome message will be displayed initially -->
                 </div>
-                
-                <div class="form-group">
-                    <label for="level" class="form-label">Education Level</label>
-                    <select id="level" class="form-select" required>
-                        <option value="elementary">Elementary School</option>
-                        <option value="middle">Middle School</option>
-                        <option value="highSchool">High School</option>
-                        <option value="college" selected>College</option>
-                        <option value="graduate">Graduate/Professional</option>
-                    </select>
-                </div>
-                
-                <div class="form-group">
-                    <label for="format" class="form-label">Format</label>
-                    <select id="format" class="form-select" required>
-                        <option value="comprehensive" selected>Comprehensive Study Guide</option>
-                        <option value="keyPoints">Key Points Summary</option>
-                        <option value="outline">Structured Outline</option>
-                        <option value="quiz">Quiz/Practice Questions</option>
-                        <option value="flashcards">Flashcard Format</option>
-                    </select>
-                </div>
-                
-                <div class="form-group">
-                    <label class="form-label">Options</label>
-                    <div class="form-checkbox-group">
-                        <div class="form-checkbox-item">
-                            <input type="checkbox" id="include-visuals" class="form-checkbox" checked>
-                            <label for="include-visuals">Include diagrams/visuals</label>
-                        </div>
-                        <div class="form-checkbox-item">
-                            <input type="checkbox" id="include-questions" class="form-checkbox" checked>
-                            <label for="include-questions">Include practice questions</label>
-                        </div>
+
+                <div id="typing-indicator" class="typing-indicator hidden">
+                    <div class="message-avatar ai">AI</div>
+                    <div class="typing-animation">
+                        <div class="typing-dot"></div>
+                        <div class="typing-dot"></div>
+                        <div class="typing-dot"></div>
                     </div>
                 </div>
-                
-                <button type="submit" id="generate-guide-btn" class="btn-submit">Generate Study Guide</button>
-            </form>
+
+                <div class="chat-input-container">
+                    <div class="chat-input-wrapper">
+                        <textarea
+                            id="chat-textarea"
+                            class="chat-textarea"
+                            placeholder="Type your message here..."
+                            rows="1"
+                        ></textarea>
+                        <button
+                            id="chat-send-btn"
+                            class="chat-send-btn"
+                            disabled
+                        >
+                            ➤
+                        </button>
+                    </div>
+                </div>
+            </div>
         </div>
-    </div>
-    
-    <div id="notification" class="notification">
-        Notification message
-    </div>
-    
-    <!-- JavaScript -->
-    <script>
-        /**
-         * dg8ab learn - Main Application
-         * Created by Dhruv Gowda (@servers.dg8ab)
-         */
-        class DG8ABLearn {
-            constructor() {
-                // Initialize properties
-                this.aiService = new AIService();
-                this.pdfGenerator = new PDFGenerator();
-                this.currentSessionId = null;
-                this.sessions = [];
-                this.isProcessing = false;
-                
-                // DOM elements
-                this.chatMessages = document.getElementById('chat-messages');
-                this.chatTextarea = document.getElementById('chat-textarea');
-                this.chatSendBtn = document.getElementById('chat-send-btn');
-                this.sessionsListEl = document.getElementById('sessions-list');
-                this.typingIndicator = document.getElementById('typing-indicator');
-                this.studyGuideModal = document.getElementById('study-guide-modal');
-                this.studyGuideForm = document.getElementById('study-guide-form');
-                this.newChatBtn = document.getElementById('new-chat-btn');
-                this.createStudyGuideBtn = document.getElementById('create-study-guide-btn');
-                this.summarizeBtn = document.getElementById('summarize-btn');
-                this.exportBtn = document.getElementById('export-btn');
-                this.modalCloseBtn = document.getElementById('modal-close');
-                
-                // Initialize the application
-                this.initialize();
-            }
-            
-            initialize() {
-                // Initialize marked for Markdown rendering
-                marked.setOptions({
-                    highlight: function(code, lang) {
-                        if (hljs.getLanguage(lang)) {
-                            return hljs.highlight(code, { language: lang }).value;
-                        } else {
-                            return hljs.highlightAuto(code).value;
-                        }
-                    },
-                    breaks: true
-                });
-                
-                // Load sessions from localStorage
-                this.loadSessions();
-                
-                // Create a new chat if no sessions exist
-                if (this.sessions.length === 0) {
-                    this.createNewChat();
-                } else {
-                    // Load the most recent session
-                    this.loadSession(this.sessions[0].id);
+
+        <!-- Study Guide Modal -->
+        <div id="study-guide-modal" class="modal-overlay">
+            <div class="modal">
+                <div class="modal-header">
+                    <h2 class="modal-title">Create Study Guide</h2>
+                    <button id="modal-close" class="modal-close">×</button>
+                </div>
+
+                <form id="study-guide-form" class="study-guide-form">
+                    <div class="form-group">
+                        <label for="topic" class="form-label">Topic</label>
+                        <input
+                            type="text"
+                            id="topic"
+                            class="form-input"
+                            required
+                            placeholder="e.g., Photosynthesis, World War II, Calculus"
+                        />
+                    </div>
+
+                    <div class="form-group">
+                        <label for="level" class="form-label"
+                            >Education Level</label
+                        >
+                        <select id="level" class="form-select" required>
+                            <option value="elementary">
+                                Elementary School
+                            </option>
+                            <option value="middle">Middle School</option>
+                            <option value="highSchool">High School</option>
+                            <option value="college" selected>College</option>
+                            <option value="graduate">
+                                Graduate/Professional
+                            </option>
+                        </select>
+                    </div>
+
+                    <div class="form-group">
+                        <label for="format" class="form-label">Format</label>
+                        <select id="format" class="form-select" required>
+                            <option value="comprehensive" selected>
+                                Comprehensive Study Guide
+                            </option>
+                            <option value="keyPoints">
+                                Key Points Summary
+                            </option>
+                            <option value="outline">Structured Outline</option>
+                            <option value="quiz">
+                                Quiz/Practice Questions
+                            </option>
+                            <option value="flashcards">Flashcard Format</option>
+                        </select>
+                    </div>
+
+                    <div class="form-group">
+                        <label class="form-label">Options</label>
+                        <div class="form-checkbox-group">
+                            <div class="form-checkbox-item">
+                                <input
+                                    type="checkbox"
+                                    id="include-visuals"
+                                    class="form-checkbox"
+                                    checked
+                                />
+                                <label for="include-visuals"
+                                    >Include diagrams/visuals</label
+                                >
+                            </div>
+                            <div class="form-checkbox-item">
+                                <input
+                                    type="checkbox"
+                                    id="include-questions"
+                                    class="form-checkbox"
+                                    checked
+                                />
+                                <label for="include-questions"
+                                    >Include practice questions</label
+                                >
+                            </div>
+                        </div>
+                    </div>
+
+                    <button
+                        type="submit"
+                        id="generate-guide-btn"
+                        class="btn-submit"
+                    >
+                        Generate Study Guide
+                    </button>
+                </form>
+            </div>
+        </div>
+
+        <div id="notification" class="notification">Notification message</div>
+
+        <!-- JavaScript -->
+        <script>
+            /**
+             * dg8ab learn - Main Application
+             * Created by Dhruv Gowda (@servers.dg8ab)
+             */
+            class DG8ABLearn {
+                constructor() {
+                    // Initialize properties
+                    this.aiService = new AIService();
+                    this.pdfGenerator = new PDFGenerator();
+                    this.currentSessionId = null;
+                    this.sessions = [];
+                    this.isProcessing = false;
+
+                    // DOM elements
+                    this.chatMessages =
+                        document.getElementById("chat-messages");
+                    this.chatTextarea =
+                        document.getElementById("chat-textarea");
+                    this.chatSendBtn = document.getElementById("chat-send-btn");
+                    this.sessionsListEl =
+                        document.getElementById("sessions-list");
+                    this.typingIndicator =
+                        document.getElementById("typing-indicator");
+                    this.studyGuideModal =
+                        document.getElementById("study-guide-modal");
+                    this.studyGuideForm =
+                        document.getElementById("study-guide-form");
+                    this.newChatBtn = document.getElementById("new-chat-btn");
+                    this.createStudyGuideBtn = document.getElementById(
+                        "create-study-guide-btn",
+                    );
+                    this.summarizeBtn =
+                        document.getElementById("summarize-btn");
+                    this.exportBtn = document.getElementById("export-btn");
+                    this.modalCloseBtn = document.getElementById("modal-close");
+
+                    // Initialize the application
+                    this.initialize();
                 }
-                
-                // Display welcome message
-                this.createWelcomeMessage();
-                
-                // Setup event listeners
-                this.setupEventListeners();
-                
-                // Setup textarea auto-resize
-                this.setupTextareaAutoResize();
-                
-                // Initialize AI Service
-                this.aiService.initializePuter().then(available => {
-                    if (available) {
-                        console.log('Puter.js AI Service is available');
+
+                initialize() {
+                    // Initialize marked for Markdown rendering
+                    marked.setOptions({
+                        highlight: function (code, lang) {
+                            if (hljs.getLanguage(lang)) {
+                                return hljs.highlight(code, { language: lang })
+                                    .value;
+                            } else {
+                                return hljs.highlightAuto(code).value;
+                            }
+                        },
+                        breaks: true,
+                    });
+
+                    // Load sessions from localStorage
+                    this.loadSessions();
+
+                    // Create a new chat if no sessions exist
+                    if (this.sessions.length === 0) {
+                        this.createNewChat();
                     } else {
-                        console.warn('Puter.js AI Service is not available, using fallback responses');
-                        this.showNotification('AI service is currently unavailable. Using fallback responses.', 'warning');
+                        // Load the most recent session
+                        this.loadSession(this.sessions[0].id);
                     }
-                });
-                
-                // Initialize PDF Generator
-                this.pdfGenerator.setupPDFExportButtons();
-            }
-            
-            setupEventListeners() {
-                // Chat send button click
-                this.chatSendBtn.addEventListener('click', () => this.sendMessage());
-                
-                // Enter key to send message
-                this.chatTextarea.addEventListener('keydown', (e) => {
-                    if (e.key === 'Enter' && !e.shiftKey) {
+
+                    // Display welcome message
+                    this.createWelcomeMessage();
+
+                    // Setup event listeners
+                    this.setupEventListeners();
+
+                    // Setup textarea auto-resize
+                    this.setupTextareaAutoResize();
+
+                    // Initialize AI Service
+                    this.aiService.initializePuter().then((available) => {
+                        if (available) {
+                            console.log("Puter.js AI Service is available");
+                        } else {
+                            console.warn(
+                                "Puter.js AI Service is not available, using fallback responses",
+                            );
+                            this.showNotification(
+                                "AI service is currently unavailable. Using fallback responses.",
+                                "warning",
+                            );
+                        }
+                    });
+
+                    // Initialize PDF Generator
+                    this.pdfGenerator.setupPDFExportButtons();
+                }
+
+                setupEventListeners() {
+                    // Chat send button click
+                    this.chatSendBtn.addEventListener("click", () =>
+                        this.sendMessage(),
+                    );
+
+                    // Enter key to send message
+                    this.chatTextarea.addEventListener("keydown", (e) => {
+                        if (e.key === "Enter" && !e.shiftKey) {
+                            e.preventDefault();
+                            this.sendMessage();
+                        }
+                    });
+
+                    // Textarea input to enable/disable send button
+                    this.chatTextarea.addEventListener("input", () => {
+                        this.chatSendBtn.disabled =
+                            this.chatTextarea.value.trim() === "";
+                    });
+
+                    // New chat button
+                    this.newChatBtn.addEventListener("click", () =>
+                        this.createNewChat(),
+                    );
+
+                    // Create study guide button
+                    this.createStudyGuideBtn.addEventListener("click", () =>
+                        this.toggleStudyGuideModal(true),
+                    );
+
+                    // Close modal button
+                    this.modalCloseBtn.addEventListener("click", () =>
+                        this.toggleStudyGuideModal(false),
+                    );
+
+                    // Click outside modal to close
+                    this.studyGuideModal.addEventListener("click", (e) => {
+                        if (e.target === this.studyGuideModal) {
+                            this.toggleStudyGuideModal(false);
+                        }
+                    });
+
+                    // Study guide form submission
+                    this.studyGuideForm.addEventListener("submit", (e) => {
                         e.preventDefault();
-                        this.sendMessage();
-                    }
-                });
-                
-                // Textarea input to enable/disable send button
-                this.chatTextarea.addEventListener('input', () => {
-                    this.chatSendBtn.disabled = this.chatTextarea.value.trim() === '';
-                });
-                
-                // New chat button
-                this.newChatBtn.addEventListener('click', () => this.createNewChat());
-                
-                // Create study guide button
-                this.createStudyGuideBtn.addEventListener('click', () => this.toggleStudyGuideModal(true));
-                
-                // Close modal button
-                this.modalCloseBtn.addEventListener('click', () => this.toggleStudyGuideModal(false));
-                
-                // Click outside modal to close
-                this.studyGuideModal.addEventListener('click', (e) => {
-                    if (e.target === this.studyGuideModal) {
-                        this.toggleStudyGuideModal(false);
-                    }
-                });
-                
-                // Study guide form submission
-                this.studyGuideForm.addEventListener('submit', (e) => {
-                    e.preventDefault();
-                    this.createStudyGuide();
-                });
-                
-                // Summarize button
-                this.summarizeBtn.addEventListener('click', () => this.summarizeChat());
-                
-                // Export button
-                this.exportBtn.addEventListener('click', () => this.exportCurrentChat());
-            }
-            
-            createWelcomeMessage() {
-                const welcomeHTML = `
+                        this.createStudyGuide();
+                    });
+
+                    // Summarize button
+                    this.summarizeBtn.addEventListener("click", () =>
+                        this.summarizeChat(),
+                    );
+
+                    // Export button
+                    this.exportBtn.addEventListener("click", () =>
+                        this.exportCurrentChat(),
+                    );
+                }
+
+                createWelcomeMessage() {
+                    const welcomeHTML = `
                     <div class="welcome-message">
                         <h1 class="welcome-title">Welcome to dg8ab learn</h1>
                         <p class="welcome-description">
@@ -1052,353 +1225,409 @@
                         <p>Type a message below to get started!</p>
                     </div>
                 `;
-                
-                this.chatMessages.innerHTML = welcomeHTML;
-            }
-            
-            async sendMessage() {
-                const userMessage = this.chatTextarea.value.trim();
-                if (userMessage === '' || this.isProcessing) return;
-                
-                // Clear textarea and disable send button
-                this.chatTextarea.value = '';
-                this.chatSendBtn.disabled = true;
-                this.isProcessing = true;
-                
-                // Add user message to chat
-                const message = {
-                    role: 'user',
-                    content: userMessage,
-                    timestamp: new Date().toISOString()
-                };
-                
-                // Get current session or create new one if none exists
-                if (!this.currentSessionId) {
-                    this.createNewChat();
+
+                    this.chatMessages.innerHTML = welcomeHTML;
                 }
-                
-                // Add message to current session
-                const currentSession = this.sessions.find(s => s.id === this.currentSessionId);
-                if (!currentSession.messages) {
-                    currentSession.messages = [];
-                }
-                currentSession.messages.push(message);
-                
-                // Update session title based on first message
-                if (currentSession.messages.length === 1) {
-                    this.updateSessionTitle(this.currentSessionId, userMessage);
-                }
-                
-                // Save sessions to localStorage
-                this.saveSessionsToStorage();
-                
-                // Render messages
-                this.renderMessages();
-                
-                // Show typing indicator
-                this.typingIndicator.classList.remove('hidden');
-                
-                try {
-                    // Generate AI response
-                    const response = await this.aiService.generateResponse(userMessage);
-                    
-                    // Hide typing indicator
-                    this.typingIndicator.classList.add('hidden');
-                    
-                    // Add AI response to chat
-                    const aiMessage = {
-                        role: 'assistant',
-                        content: response,
-                        timestamp: new Date().toISOString()
+
+                async sendMessage() {
+                    const userMessage = this.chatTextarea.value.trim();
+                    if (userMessage === "" || this.isProcessing) return;
+
+                    // Clear textarea and disable send button
+                    this.chatTextarea.value = "";
+                    this.chatSendBtn.disabled = true;
+                    this.isProcessing = true;
+
+                    // Add user message to chat
+                    const message = {
+                        role: "user",
+                        content: userMessage,
+                        timestamp: new Date().toISOString(),
                     };
-                    
-                    currentSession.messages.push(aiMessage);
-                    
-                    // Save to localStorage
-                    this.saveSessionsToStorage();
-                    
-                    // Render messages
-                    this.renderMessages();
-                } catch (error) {
-                    // Hide typing indicator
-                    this.typingIndicator.classList.add('hidden');
-                    
-                    // Show error message
-                    this.showNotification('Error: ' + error.message, 'error');
-                    console.error('Error generating response:', error);
-                }
-                
-                // Reset processing state
-                this.isProcessing = false;
-                this.chatTextarea.focus();
-            }
-            
-            async createStudyGuide() {
-                // Get form values
-                const topic = document.getElementById('topic').value.trim();
-                const level = document.getElementById('level').value;
-                const format = document.getElementById('format').value;
-                const includeVisuals = document.getElementById('include-visuals').checked;
-                const includeQuestions = document.getElementById('include-questions').checked;
-                
-                if (!topic) return;
-                
-                // Close the modal
-                this.toggleStudyGuideModal(false);
-                
-                // Create a new chat if none exists
-                if (!this.currentSessionId) {
-                    this.createNewChat();
-                }
-                
-                // Show typing indicator
-                this.typingIndicator.classList.remove('hidden');
-                
-                // Set processing state
-                this.isProcessing = true;
-                
-                try {
-                    // Generate study guide
-                    const studyGuide = await this.aiService.generateStudyGuide(
-                        topic,
-                        level,
-                        format,
-                        includeVisuals,
-                        includeQuestions
+
+                    // Get current session or create new one if none exists
+                    if (!this.currentSessionId) {
+                        this.createNewChat();
+                    }
+
+                    // Add message to current session
+                    const currentSession = this.sessions.find(
+                        (s) => s.id === this.currentSessionId,
                     );
-                    
-                    // Hide typing indicator
-                    this.typingIndicator.classList.add('hidden');
-                    
-                    // Add user request to chat
-                    const userMessage = {
-                        role: 'user',
-                        content: `Create a ${format} study guide on ${topic} for ${level} level.`,
-                        timestamp: new Date().toISOString()
-                    };
-                    
-                    // Add AI response to chat
-                    const aiMessage = {
-                        role: 'assistant',
-                        content: studyGuide,
-                        timestamp: new Date().toISOString()
-                    };
-                    
-                    // Get current session
-                    const currentSession = this.sessions.find(s => s.id === this.currentSessionId);
                     if (!currentSession.messages) {
                         currentSession.messages = [];
                     }
-                    
-                    // Add messages to session
-                    currentSession.messages.push(userMessage, aiMessage);
-                    
-                    // Update session title if first message
-                    if (currentSession.messages.length <= 2) {
-                        this.updateSessionTitle(this.currentSessionId, `Study Guide: ${topic}`);
+                    currentSession.messages.push(message);
+
+                    // Update session title based on first message
+                    if (currentSession.messages.length === 1) {
+                        this.updateSessionTitle(
+                            this.currentSessionId,
+                            userMessage,
+                        );
                     }
-                    
-                    // Save to localStorage
+
+                    // Save sessions to localStorage
                     this.saveSessionsToStorage();
-                    
+
                     // Render messages
                     this.renderMessages();
-                } catch (error) {
-                    // Hide typing indicator
-                    this.typingIndicator.classList.add('hidden');
-                    
-                    // Show error message
-                    this.showNotification('Error creating study guide: ' + error.message, 'error');
-                    console.error('Error creating study guide:', error);
+
+                    // Show typing indicator
+                    this.typingIndicator.classList.remove("hidden");
+
+                    try {
+                        // Generate AI response
+                        const response =
+                            await this.aiService.generateResponse(userMessage);
+
+                        // Hide typing indicator
+                        this.typingIndicator.classList.add("hidden");
+
+                        // Add AI response to chat
+                        const aiMessage = {
+                            role: "assistant",
+                            content: response,
+                            timestamp: new Date().toISOString(),
+                        };
+
+                        currentSession.messages.push(aiMessage);
+
+                        // Save to localStorage
+                        this.saveSessionsToStorage();
+
+                        // Render messages
+                        this.renderMessages();
+                    } catch (error) {
+                        // Hide typing indicator
+                        this.typingIndicator.classList.add("hidden");
+
+                        // Show error message
+                        this.showNotification(
+                            "Error: " + error.message,
+                            "error",
+                        );
+                        console.error("Error generating response:", error);
+                    }
+
+                    // Reset processing state
+                    this.isProcessing = false;
+                    this.chatTextarea.focus();
                 }
-                
-                // Reset processing state
-                this.isProcessing = false;
-            }
-            
-            async summarizeChat() {
-                if (!this.currentSessionId || this.isProcessing) return;
-                
-                const currentSession = this.sessions.find(s => s.id === this.currentSessionId);
-                if (!currentSession || !currentSession.messages || currentSession.messages.length < 2) {
-                    this.showNotification('Not enough messages to summarize.', 'warning');
-                    return;
+
+                async createStudyGuide() {
+                    // Get form values
+                    const topic = document.getElementById("topic").value.trim();
+                    const level = document.getElementById("level").value;
+                    const format = document.getElementById("format").value;
+                    const includeVisuals =
+                        document.getElementById("include-visuals").checked;
+                    const includeQuestions =
+                        document.getElementById("include-questions").checked;
+
+                    if (!topic) return;
+
+                    // Close the modal
+                    this.toggleStudyGuideModal(false);
+
+                    // Create a new chat if none exists
+                    if (!this.currentSessionId) {
+                        this.createNewChat();
+                    }
+
+                    // Show typing indicator
+                    this.typingIndicator.classList.remove("hidden");
+
+                    // Set processing state
+                    this.isProcessing = true;
+
+                    try {
+                        // Generate study guide
+                        const studyGuide =
+                            await this.aiService.generateStudyGuide(
+                                topic,
+                                level,
+                                format,
+                                includeVisuals,
+                                includeQuestions,
+                            );
+
+                        // Hide typing indicator
+                        this.typingIndicator.classList.add("hidden");
+
+                        // Add user request to chat
+                        const userMessage = {
+                            role: "user",
+                            content: `Create a ${format} study guide on ${topic} for ${level} level.`,
+                            timestamp: new Date().toISOString(),
+                        };
+
+                        // Add AI response to chat
+                        const aiMessage = {
+                            role: "assistant",
+                            content: studyGuide,
+                            timestamp: new Date().toISOString(),
+                        };
+
+                        // Get current session
+                        const currentSession = this.sessions.find(
+                            (s) => s.id === this.currentSessionId,
+                        );
+                        if (!currentSession.messages) {
+                            currentSession.messages = [];
+                        }
+
+                        // Add messages to session
+                        currentSession.messages.push(userMessage, aiMessage);
+
+                        // Update session title if first message
+                        if (currentSession.messages.length <= 2) {
+                            this.updateSessionTitle(
+                                this.currentSessionId,
+                                `Study Guide: ${topic}`,
+                            );
+                        }
+
+                        // Save to localStorage
+                        this.saveSessionsToStorage();
+
+                        // Render messages
+                        this.renderMessages();
+                    } catch (error) {
+                        // Hide typing indicator
+                        this.typingIndicator.classList.add("hidden");
+
+                        // Show error message
+                        this.showNotification(
+                            "Error creating study guide: " + error.message,
+                            "error",
+                        );
+                        console.error("Error creating study guide:", error);
+                    }
+
+                    // Reset processing state
+                    this.isProcessing = false;
                 }
-                
-                // Show typing indicator
-                this.typingIndicator.classList.remove('hidden');
-                
-                // Set processing state
-                this.isProcessing = true;
-                
-                try {
-                    // Generate summary
-                    const summary = await this.aiService.summarizeConversation(currentSession.messages);
-                    
-                    // Hide typing indicator
-                    this.typingIndicator.classList.add('hidden');
-                    
-                    // Add user request to chat
-                    const userMessage = {
-                        role: 'user',
-                        content: 'Please summarize our conversation.',
-                        timestamp: new Date().toISOString()
+
+                async summarizeChat() {
+                    if (!this.currentSessionId || this.isProcessing) return;
+
+                    const currentSession = this.sessions.find(
+                        (s) => s.id === this.currentSessionId,
+                    );
+                    if (
+                        !currentSession ||
+                        !currentSession.messages ||
+                        currentSession.messages.length < 2
+                    ) {
+                        this.showNotification(
+                            "Not enough messages to summarize.",
+                            "warning",
+                        );
+                        return;
+                    }
+
+                    // Show typing indicator
+                    this.typingIndicator.classList.remove("hidden");
+
+                    // Set processing state
+                    this.isProcessing = true;
+
+                    try {
+                        // Generate summary
+                        const summary =
+                            await this.aiService.summarizeConversation(
+                                currentSession.messages,
+                            );
+
+                        // Hide typing indicator
+                        this.typingIndicator.classList.add("hidden");
+
+                        // Add user request to chat
+                        const userMessage = {
+                            role: "user",
+                            content: "Please summarize our conversation.",
+                            timestamp: new Date().toISOString(),
+                        };
+
+                        // Add AI response to chat
+                        const aiMessage = {
+                            role: "assistant",
+                            content: summary,
+                            timestamp: new Date().toISOString(),
+                        };
+
+                        // Add messages to session
+                        currentSession.messages.push(userMessage, aiMessage);
+
+                        // Save to localStorage
+                        this.saveSessionsToStorage();
+
+                        // Render messages
+                        this.renderMessages();
+                    } catch (error) {
+                        // Hide typing indicator
+                        this.typingIndicator.classList.add("hidden");
+
+                        // Show error message
+                        this.showNotification(
+                            "Error summarizing conversation: " + error.message,
+                            "error",
+                        );
+                        console.error("Error summarizing conversation:", error);
+                    }
+
+                    // Reset processing state
+                    this.isProcessing = false;
+                }
+
+                createNewChat() {
+                    // Generate a new session ID
+                    const sessionId = this.generateUniqueId();
+
+                    // Create a new session object
+                    const newSession = {
+                        id: sessionId,
+                        title: "New Conversation",
+                        createdAt: new Date().toISOString(),
+                        messages: [],
                     };
-                    
-                    // Add AI response to chat
-                    const aiMessage = {
-                        role: 'assistant',
-                        content: summary,
-                        timestamp: new Date().toISOString()
-                    };
-                    
-                    // Add messages to session
-                    currentSession.messages.push(userMessage, aiMessage);
-                    
+
+                    // Add to sessions array at the beginning (newest first)
+                    this.sessions.unshift(newSession);
+
+                    // Set as current session
+                    this.currentSessionId = sessionId;
+
                     // Save to localStorage
                     this.saveSessionsToStorage();
-                    
+
+                    // Render sessions list
+                    this.renderRecentSessions();
+
+                    // Clear chat messages and show welcome message
+                    this.createWelcomeMessage();
+                }
+
+                loadSession(sessionId) {
+                    // Find session by ID
+                    const session = this.sessions.find(
+                        (s) => s.id === sessionId,
+                    );
+                    if (!session) return;
+
+                    // Set as current session
+                    this.currentSessionId = sessionId;
+
                     // Render messages
                     this.renderMessages();
-                } catch (error) {
-                    // Hide typing indicator
-                    this.typingIndicator.classList.add('hidden');
-                    
-                    // Show error message
-                    this.showNotification('Error summarizing conversation: ' + error.message, 'error');
-                    console.error('Error summarizing conversation:', error);
+
+                    // Update active class in sessions list
+                    this.renderRecentSessions();
                 }
-                
-                // Reset processing state
-                this.isProcessing = false;
-            }
-            
-            createNewChat() {
-                // Generate a new session ID
-                const sessionId = this.generateUniqueId();
-                
-                // Create a new session object
-                const newSession = {
-                    id: sessionId,
-                    title: 'New Conversation',
-                    createdAt: new Date().toISOString(),
-                    messages: []
-                };
-                
-                // Add to sessions array at the beginning (newest first)
-                this.sessions.unshift(newSession);
-                
-                // Set as current session
-                this.currentSessionId = sessionId;
-                
-                // Save to localStorage
-                this.saveSessionsToStorage();
-                
-                // Render sessions list
-                this.renderRecentSessions();
-                
-                // Clear chat messages and show welcome message
-                this.createWelcomeMessage();
-            }
-            
-            loadSession(sessionId) {
-                // Find session by ID
-                const session = this.sessions.find(s => s.id === sessionId);
-                if (!session) return;
-                
-                // Set as current session
-                this.currentSessionId = sessionId;
-                
-                // Render messages
-                this.renderMessages();
-                
-                // Update active class in sessions list
-                this.renderRecentSessions();
-            }
-            
-            exportCurrentChat() {
-                if (!this.currentSessionId) return;
-                
-                // Find session by ID
-                const session = this.sessions.find(s => s.id === this.currentSessionId);
-                if (!session || !session.messages || session.messages.length === 0) {
-                    this.showNotification('No messages to export.', 'warning');
-                    return;
+
+                exportCurrentChat() {
+                    if (!this.currentSessionId) return;
+
+                    // Find session by ID
+                    const session = this.sessions.find(
+                        (s) => s.id === this.currentSessionId,
+                    );
+                    if (
+                        !session ||
+                        !session.messages ||
+                        session.messages.length === 0
+                    ) {
+                        this.showNotification(
+                            "No messages to export.",
+                            "warning",
+                        );
+                        return;
+                    }
+
+                    // Call the PDF generator to export the current chat
+                    try {
+                        this.pdfGenerator.exportToPDF(this.chatMessages, {
+                            title: session.title || "Conversation Export",
+                            filename: `dg8ab-learn-${new Date().toISOString().split("T")[0]}.pdf`,
+                        });
+
+                        this.showNotification(
+                            "Chat exported successfully!",
+                            "success",
+                        );
+                    } catch (error) {
+                        this.showNotification(
+                            "Error exporting chat: " + error.message,
+                            "error",
+                        );
+                        console.error("Error exporting chat:", error);
+                    }
                 }
-                
-                // Call the PDF generator to export the current chat
-                try {
-                    this.pdfGenerator.exportToPDF(this.chatMessages, {
-                        title: session.title || 'Conversation Export',
-                        filename: `dg8ab-learn-${new Date().toISOString().split('T')[0]}.pdf`
+
+                toggleStudyGuideModal(show) {
+                    if (show) {
+                        this.studyGuideModal.classList.add("active");
+                        // Reset form
+                        document.getElementById("study-guide-form").reset();
+                        // Focus on topic field
+                        setTimeout(() => {
+                            document.getElementById("topic").focus();
+                        }, 100);
+                    } else {
+                        this.studyGuideModal.classList.remove("active");
+                    }
+                }
+
+                renderMessages() {
+                    if (!this.currentSessionId) return;
+
+                    // Find session by ID
+                    const session = this.sessions.find(
+                        (s) => s.id === this.currentSessionId,
+                    );
+                    if (!session || !session.messages) return;
+
+                    // Clear chat messages
+                    this.chatMessages.innerHTML = "";
+
+                    // Render each message
+                    session.messages.forEach((message) => {
+                        const messageElement =
+                            this.createMessageElement(message);
+                        this.chatMessages.appendChild(messageElement);
                     });
-                    
-                    this.showNotification('Chat exported successfully!', 'success');
-                } catch (error) {
-                    this.showNotification('Error exporting chat: ' + error.message, 'error');
-                    console.error('Error exporting chat:', error);
+
+                    // Scroll to bottom
+                    this.chatMessages.scrollTop =
+                        this.chatMessages.scrollHeight;
                 }
-            }
-            
-            toggleStudyGuideModal(show) {
-                if (show) {
-                    this.studyGuideModal.classList.add('active');
-                    // Reset form
-                    document.getElementById('study-guide-form').reset();
-                    // Focus on topic field
-                    setTimeout(() => {
-                        document.getElementById('topic').focus();
-                    }, 100);
-                } else {
-                    this.studyGuideModal.classList.remove('active');
-                }
-            }
-            
-            renderMessages() {
-                if (!this.currentSessionId) return;
-                
-                // Find session by ID
-                const session = this.sessions.find(s => s.id === this.currentSessionId);
-                if (!session || !session.messages) return;
-                
-                // Clear chat messages
-                this.chatMessages.innerHTML = '';
-                
-                // Render each message
-                session.messages.forEach(message => {
-                    const messageElement = this.createMessageElement(message);
-                    this.chatMessages.appendChild(messageElement);
-                });
-                
-                // Scroll to bottom
-                this.chatMessages.scrollTop = this.chatMessages.scrollHeight;
-            }
-            
-            createMessageElement(message) {
-                const div = document.createElement('div');
-                div.className = `message ${message.role === 'user' ? 'user' : ''}`;
-                
-                // Format timestamp
-                const timestamp = this.formatDate(message.timestamp);
-                
-                // Format message content using marked for Markdown
-                let formattedContent = '';
-                
-                try {
-                    formattedContent = marked.parse(message.content);
-                } catch (e) {
-                    // Fallback to plain text if markdown parsing fails
-                    formattedContent = `<p>${message.content}</p>`;
-                    console.error('Error parsing markdown:', e);
-                }
-                
-                div.innerHTML = `
-                    <div class="message-avatar ${message.role === 'user' ? 'user' : 'ai'}">
-                        ${message.role === 'user' ? 'You' : 'AI'}
+
+                createMessageElement(message) {
+                    const div = document.createElement("div");
+                    div.className = `message ${message.role === "user" ? "user" : ""}`;
+
+                    // Format timestamp
+                    const timestamp = this.formatDate(message.timestamp);
+
+                    // Format message content using marked for Markdown
+                    let formattedContent = "";
+
+                    try {
+                        formattedContent = marked.parse(message.content);
+                    } catch (e) {
+                        // Fallback to plain text if markdown parsing fails
+                        formattedContent = `<p>${message.content}</p>`;
+                        console.error("Error parsing markdown:", e);
+                    }
+
+                    div.innerHTML = `
+                    <div class="message-avatar ${message.role === "user" ? "user" : "ai"}">
+                        ${message.role === "user" ? "You" : "AI"}
                     </div>
                     <div class="message-content">
                         <div class="message-header">
-                            <span class="message-sender">${message.role === 'user' ? 'You' : 'AI Assistant'}</span>
+                            <span class="message-sender">${message.role === "user" ? "You" : "AI Assistant"}</span>
                             <span class="message-time">${timestamp}</span>
                         </div>
                         <div class="message-text">
@@ -1406,568 +1635,802 @@
                         </div>
                     </div>
                 `;
-                
-                return div;
-            }
-            
-            renderTypingIndicator() {
-                this.typingIndicator.classList.remove('hidden');
-            }
-            
-            renderRecentSessions() {
-                // Clear sessions list
-                this.sessionsListEl.innerHTML = '';
-                
-                // Render each session
-                this.sessions.forEach(session => {
-                    const div = document.createElement('div');
-                    div.className = `session-item ${session.id === this.currentSessionId ? 'active' : ''}`;
-                    div.setAttribute('data-session-id', session.id);
-                    
-                    // Format date
-                    const formattedDate = this.formatDate(session.createdAt);
-                    
-                    div.innerHTML = `
+
+                    return div;
+                }
+
+                renderTypingIndicator() {
+                    this.typingIndicator.classList.remove("hidden");
+                }
+
+                renderRecentSessions() {
+                    // Clear sessions list
+                    this.sessionsListEl.innerHTML = "";
+
+                    // Render each session
+                    this.sessions.forEach((session) => {
+                        const div = document.createElement("div");
+                        div.className = `session-item ${session.id === this.currentSessionId ? "active" : ""}`;
+                        div.setAttribute("data-session-id", session.id);
+
+                        // Format date
+                        const formattedDate = this.formatDate(
+                            session.createdAt,
+                        );
+
+                        div.innerHTML = `
                         <div class="session-title">${session.title}</div>
                         <div class="session-date">${formattedDate}</div>
                     `;
-                    
-                    // Add click event
-                    div.addEventListener('click', () => this.loadSession(session.id));
-                    
-                    this.sessionsListEl.appendChild(div);
-                });
-            }
-            
-            formatDate(dateString) {
-                if (!dateString) return '';
-                
-                const date = new Date(dateString);
-                const now = new Date();
-                const diffMs = now - date;
-                const diffSec = Math.floor(diffMs / 1000);
-                const diffMin = Math.floor(diffSec / 60);
-                const diffHour = Math.floor(diffMin / 60);
-                const diffDay = Math.floor(diffHour / 24);
-                
-                if (diffDay > 0) {
-                    return date.toLocaleDateString();
-                } else if (diffHour > 0) {
-                    return `${diffHour}h ago`;
-                } else if (diffMin > 0) {
-                    return `${diffMin}m ago`;
-                } else {
-                    return 'Just now';
+
+                        // Add click event
+                        div.addEventListener("click", () =>
+                            this.loadSession(session.id),
+                        );
+
+                        this.sessionsListEl.appendChild(div);
+                    });
                 }
-            }
-            
-            loadSessions() {
-                try {
-                    const savedSessions = localStorage.getItem('dg8ab_learn_sessions');
-                    if (savedSessions) {
-                        this.sessions = JSON.parse(savedSessions);
+
+                formatDate(dateString) {
+                    if (!dateString) return "";
+
+                    const date = new Date(dateString);
+                    const now = new Date();
+                    const diffMs = now - date;
+                    const diffSec = Math.floor(diffMs / 1000);
+                    const diffMin = Math.floor(diffSec / 60);
+                    const diffHour = Math.floor(diffMin / 60);
+                    const diffDay = Math.floor(diffHour / 24);
+
+                    if (diffDay > 0) {
+                        return date.toLocaleDateString();
+                    } else if (diffHour > 0) {
+                        return `${diffHour}h ago`;
+                    } else if (diffMin > 0) {
+                        return `${diffMin}m ago`;
+                    } else {
+                        return "Just now";
                     }
-                } catch (error) {
-                    console.error('Error loading sessions:', error);
-                    this.sessions = [];
                 }
-                
-                // Render sessions list
-                this.renderRecentSessions();
-            }
-            
-            saveSessionsToStorage() {
-                try {
-                    localStorage.setItem('dg8ab_learn_sessions', JSON.stringify(this.sessions));
-                } catch (error) {
-                    console.error('Error saving sessions:', error);
-                    this.showNotification('Error saving sessions.', 'error');
+
+                loadSessions() {
+                    try {
+                        const savedSessions = localStorage.getItem(
+                            "dg8ab_learn_sessions",
+                        );
+                        if (savedSessions) {
+                            this.sessions = JSON.parse(savedSessions);
+                        }
+                    } catch (error) {
+                        console.error("Error loading sessions:", error);
+                        this.sessions = [];
+                    }
+
+                    // Render sessions list
+                    this.renderRecentSessions();
                 }
-                
-                // Render sessions list
-                this.renderRecentSessions();
-            }
-            
-            updateSessionTitle(sessionId, message) {
-                const session = this.sessions.find(s => s.id === sessionId);
-                if (!session) return;
-                
-                // Extract title from message
-                const title = this.extractTitle(message);
-                session.title = title;
-                
-                // Save to localStorage
-                this.saveSessionsToStorage();
-            }
-            
-            updateSessionMessages(sessionId, messages) {
-                const session = this.sessions.find(s => s.id === sessionId);
-                if (!session) return;
-                
-                session.messages = messages;
-                
-                // Save to localStorage
-                this.saveSessionsToStorage();
-            }
-            
-            extractTitle(message) {
-                // Extract a title from the message
-                // Limit to 30 characters
-                let title = message.substring(0, 30).trim();
-                if (message.length > 30) title += '...';
-                return title;
-            }
-            
-            getCurrentSessionTitle() {
-                if (!this.currentSessionId) return 'Conversation';
-                
-                const session = this.sessions.find(s => s.id === this.currentSessionId);
-                return session ? session.title : 'Conversation';
-            }
-            
-            setupTextareaAutoResize() {
-                this.chatTextarea.addEventListener('input', function() {
-                    this.style.height = 'auto';
-                    const newHeight = Math.min(this.scrollHeight, 200);
-                    this.style.height = newHeight + 'px';
-                });
-            }
-            
-            generateUniqueId() {
-                return Date.now().toString(36) + Math.random().toString(36).substr(2);
-            }
-            
-            showNotification(message, type = 'info') {
-                const notification = document.getElementById('notification');
-                notification.textContent = message;
-                notification.className = 'notification';
-                
-                // Add type class
-                if (type) {
-                    notification.classList.add(type);
+
+                saveSessionsToStorage() {
+                    try {
+                        localStorage.setItem(
+                            "dg8ab_learn_sessions",
+                            JSON.stringify(this.sessions),
+                        );
+                    } catch (error) {
+                        console.error("Error saving sessions:", error);
+                        this.showNotification(
+                            "Error saving sessions.",
+                            "error",
+                        );
+                    }
+
+                    // Render sessions list
+                    this.renderRecentSessions();
                 }
-                
-                // Show notification
-                notification.classList.add('show');
-                
-                // Hide after 3 seconds
-                setTimeout(() => {
-                    notification.classList.remove('show');
-                }, 3000);
+
+                updateSessionTitle(sessionId, message) {
+                    const session = this.sessions.find(
+                        (s) => s.id === sessionId,
+                    );
+                    if (!session) return;
+
+                    // Extract title from message
+                    const title = this.extractTitle(message);
+                    session.title = title;
+
+                    // Save to localStorage
+                    this.saveSessionsToStorage();
+                }
+
+                updateSessionMessages(sessionId, messages) {
+                    const session = this.sessions.find(
+                        (s) => s.id === sessionId,
+                    );
+                    if (!session) return;
+
+                    session.messages = messages;
+
+                    // Save to localStorage
+                    this.saveSessionsToStorage();
+                }
+
+                extractTitle(message) {
+                    // Extract a title from the message
+                    // Limit to 30 characters
+                    let title = message.substring(0, 30).trim();
+                    if (message.length > 30) title += "...";
+                    return title;
+                }
+
+                getCurrentSessionTitle() {
+                    if (!this.currentSessionId) return "Conversation";
+
+                    const session = this.sessions.find(
+                        (s) => s.id === this.currentSessionId,
+                    );
+                    return session ? session.title : "Conversation";
+                }
+
+                setupTextareaAutoResize() {
+                    this.chatTextarea.addEventListener("input", function () {
+                        this.style.height = "auto";
+                        const newHeight = Math.min(this.scrollHeight, 200);
+                        this.style.height = newHeight + "px";
+                    });
+                }
+
+                generateUniqueId() {
+                    return (
+                        Date.now().toString(36) +
+                        Math.random().toString(36).substr(2)
+                    );
+                }
+
+                showNotification(message, type = "info") {
+                    const notification =
+                        document.getElementById("notification");
+                    notification.textContent = message;
+                    notification.className = "notification";
+
+                    // Add type class
+                    if (type) {
+                        notification.classList.add(type);
+                    }
+
+                    // Show notification
+                    notification.classList.add("show");
+
+                    // Hide after 3 seconds
+                    setTimeout(() => {
+                        notification.classList.remove("show");
+                    }, 3000);
+                }
             }
-        }
-        
-        /**
-         * dg8ab learn AI Service
-         * Handles all AI-related functionality using Puter.js
-         * Created by Dhruv Gowda (@servers.dg8ab)
-         */
-        class AIService {
-            constructor() {
-                this.isAvailable = false;
-                this.isInitialized = false;
-            }
-            
+
             /**
-             * Initialize Puter.js and check if API is available
+             * dg8ab learn AI Service
+             * Handles all AI-related functionality using Puter.js
+             * Created by Dhruv Gowda (@servers.dg8ab)
              */
-            async initializePuter() {
-                try {
-                    // Check if Puter.js is loaded
-                    if (typeof puter === 'undefined') {
-                        console.error('Puter.js library is not loaded.');
+            class AIService {
+                constructor() {
+                    this.isAvailable = false;
+                    this.isInitialized = false;
+                }
+
+                /**
+                 * Initialize Puter.js and check if API is available
+                 */
+                async initializePuter() {
+                    try {
+                        // Check if Puter.js is loaded
+                        if (typeof puter === "undefined") {
+                            console.error("Puter.js library is not loaded.");
+                            this.isAvailable = false;
+                            this.isInitialized = true;
+                            return false;
+                        }
+
+                        // Log Puter.js version if available
+                        if (puter.version) {
+                            console.log("Puter.js version:", puter.version);
+                        }
+
+                        try {
+                            // Try a quick test in the least resource-intensive way
+                            const simpleTest = "Hello world";
+
+                            // Check if ai.chat exists first
+                            if (
+                                typeof puter.ai !== "undefined" &&
+                                typeof puter.ai.chat === "function"
+                            ) {
+                                console.log(
+                                    "Puter.js AI module found - attempting test call",
+                                );
+
+                                // Try with test mode explicitly enabled
+                                const testResponse = await puter.ai.chat(
+                                    simpleTest,
+                                    true,
+                                );
+
+                                console.log(
+                                    "Puter.js AI service test successful",
+                                    testResponse,
+                                );
+                                this.isAvailable = true;
+                                this.isInitialized = true;
+
+                                return true;
+                            } else {
+                                console.warn(
+                                    "Puter.js AI module not found or chat function not available",
+                                );
+                                throw new Error("AI module not available");
+                            }
+                        } catch (aiError) {
+                            // If we get an error that's not about the service being unavailable,
+                            // it might actually be available but just returning an error
+                            console.warn(
+                                "Puter.js AI service returned an error:",
+                                aiError,
+                            );
+
+                            // In some browsers/environments, cross-origin issues might prevent proper initialization
+                            // Try a simple request to see if basic functionality exists
+                            if (typeof puter.ai !== "undefined") {
+                                this.isAvailable = true; // Assume available but with limitations
+                                this.isInitialized = true;
+                                console.log(
+                                    "Puter.js might be available with limitations - enabling fallback mode",
+                                );
+
+                                // Create a notification to inform the user
+                                const notification =
+                                    document.createElement("div");
+                                notification.className =
+                                    "ai-status-notification";
+                                notification.innerHTML = `
+                                <div style="background-color: #FEF3C7; border: 1px solid #F59E0B; padding: 10px; border-radius: 5px; margin-bottom: 15px; font-size: 0.9rem;">
+                                    <strong>Note:</strong> The AI service is running in restricted mode. 
+                                    Some AI-powered features may be limited. This is often due to browser 
+                                    restrictions when running locally. For best results, publish this app 
+                                    to a proper web server.
+                                </div>
+                            `;
+
+                                // Insert at the top of the chat messages
+                                const chatMessages =
+                                    document.querySelector(".chat-messages");
+                                if (chatMessages && chatMessages.firstChild) {
+                                    chatMessages.insertBefore(
+                                        notification,
+                                        chatMessages.firstChild,
+                                    );
+                                }
+
+                                return true;
+                            }
+
+                            throw aiError; // Re-throw if it's a fundamental error
+                        }
+                    } catch (error) {
+                        console.error("Error initializing Puter.js:", error);
                         this.isAvailable = false;
                         this.isInitialized = true;
                         return false;
                     }
-                    
-                    // Simple test to check if AI functions are available
-                    // Using testMode: true to avoid using API credits
-                    const testResponse = await puter.ai.chat('Hello', true);
-                    
-                    this.isAvailable = true;
-                    this.isInitialized = true;
-                    
-                    return true;
-                } catch (error) {
-                    console.error('Error initializing Puter.js:', error);
-                    this.isAvailable = false;
-                    this.isInitialized = true;
-                    return false;
                 }
-            }
-            
-            /**
-             * Generate a response for the user's message
-             * @param {string} userPrompt - The user's message
-             * @param {boolean} isQuiz - Whether to generate a quiz or not
-             */
-            async generateResponse(userPrompt, isQuiz = false) {
-                try {
-                    // Wait for initialization if needed
-                    if (!this.isInitialized) {
-                        await this.initializePuter();
-                    }
-                    
-                    // Define context for the AI assistant
-                    let systemMessage = "You are a helpful and knowledgeable study assistant. You provide accurate, detailed information, and help students understand complex topics. Your responses should be educational, informative, and engaging.";
-                    
-                    if (isQuiz) {
-                        systemMessage += " Format your response as a quiz with multiple-choice questions and answers.";
-                    }
-                    
-                    // Define messages for the conversation
-                    const messages = [
-                        { role: "system", content: systemMessage },
-                        { role: "user", content: userPrompt }
-                    ];
-                    
-                    // Use Puter AI if available
-                    if (this.isAvailable) {
-                        // Use testMode: false for production (will use API credits)
-                        const response = await puter.ai.chat(messages, false, {
-                            model: 'gpt-4o-mini' // Using GPT-4o mini for better cost-performance
-                        });
-                        
-                        return response.content || response.message.content;
-                    } else {
-                        // Return fallback response if Puter.js is not available
+
+                /**
+                 * Generate a response for the user's message
+                 * @param {string} userPrompt - The user's message
+                 * @param {boolean} isQuiz - Whether to generate a quiz or not
+                 */
+                async generateResponse(userPrompt, isQuiz = false) {
+                    try {
+                        // Wait for initialization if needed
+                        if (!this.isInitialized) {
+                            await this.initializePuter();
+                        }
+
+                        // Define context for the AI assistant
+                        let systemMessage =
+                            "You are a helpful and knowledgeable study assistant. You provide accurate, detailed information, and help students understand complex topics. Your responses should be educational, informative, and engaging.";
+
+                        if (isQuiz) {
+                            systemMessage +=
+                                " Format your response as a quiz with multiple-choice questions and answers.";
+                        }
+
+                        // Define messages for the conversation
+                        const messages = [
+                            { role: "system", content: systemMessage },
+                            { role: "user", content: userPrompt },
+                        ];
+
+                        // Use Puter AI if available
+                        if (this.isAvailable) {
+                            try {
+                                // Try with testMode: true first (to avoid using API credits if possible)
+                                const response = await puter.ai.chat(
+                                    messages,
+                                    true,
+                                    {
+                                        model: "gpt-4o-mini", // Using GPT-4o mini for better cost-performance
+                                    },
+                                );
+
+                                return (
+                                    response.content || response.message.content
+                                );
+                            } catch (error) {
+                                console.warn(
+                                    "Test mode failed, attempting regular mode:",
+                                    error,
+                                );
+
+                                try {
+                                    // Try with testMode: false as fallback
+                                    const response = await puter.ai.chat(
+                                        messages,
+                                        false,
+                                        {
+                                            model: "gpt-4o-mini", // Using GPT-4o mini for better cost-performance
+                                        },
+                                    );
+
+                                    return (
+                                        response.content ||
+                                        response.message.content
+                                    );
+                                } catch (error) {
+                                    console.error(
+                                        "Both test and regular modes failed:",
+                                        error,
+                                    );
+                                    return this.getFallbackResponse(
+                                        userPrompt,
+                                        isQuiz,
+                                    );
+                                }
+                            }
+                        } else {
+                            // Return fallback response if Puter.js is not available
+                            console.log(
+                                "Using fallback response as Puter.js is not available",
+                            );
+                            return this.getFallbackResponse(userPrompt, isQuiz);
+                        }
+                    } catch (error) {
+                        console.error("Error generating response:", error);
                         return this.getFallbackResponse(userPrompt, isQuiz);
                     }
-                } catch (error) {
-                    console.error('Error generating response:', error);
-                    return this.getFallbackResponse(userPrompt, isQuiz);
                 }
-            }
-            
-            /**
-             * Generate a study guide on a specific topic
-             * @param {string} topic - The topic to create a study guide for
-             * @param {string} level - Education level (elementary, middle, highSchool, college, graduate)
-             * @param {string} format - Type of study guide (comprehensive, keyPoints, outline, quiz, flashcards)
-             * @param {boolean} includeVisuals - Whether to include visual diagrams
-             * @param {boolean} includeQuestions - Whether to include practice questions
-             */
-            async generateStudyGuide(
-                topic,
-                level = 'college',
-                format = 'comprehensive',
-                includeVisuals = true,
-                includeQuestions = true
-            ) {
-                try {
-                    // Wait for initialization if needed
-                    if (!this.isInitialized) {
-                        await this.initializePuter();
-                    }
-                    
-                    // Create prompt based on parameters
-                    let prompt = `Create a ${level} level study guide on "${topic}" in ${format} format.`;
-                    
-                    if (includeVisuals) {
-                        prompt += " Include text descriptions of helpful diagrams or visual aids where appropriate.";
-                    }
-                    
-                    if (includeQuestions) {
-                        prompt += " Include practice questions with answers.";
-                    }
-                    
-                    // Add specific instructions based on format
-                    switch (format) {
-                        case 'comprehensive':
-                            prompt += " The guide should be detailed and cover all major aspects of the topic, with examples, explanations, and context.";
-                            break;
-                        case 'keyPoints':
-                            prompt += " Focus on the most important key points, facts, and concepts. Keep it concise but comprehensive.";
-                            break;
-                        case 'outline':
-                            prompt += " Present the information in a hierarchical outline format with main topics, subtopics, and key details.";
-                            break;
-                        case 'quiz':
-                            prompt += " Create a comprehensive quiz with a variety of question types (multiple choice, short answer, etc.) and provide answers.";
-                            break;
-                        case 'flashcards':
-                            prompt += " Format as flashcards with clear questions/prompts on one side and detailed answers on the other. Present in markdown format.";
-                            break;
-                    }
-                    
-                    // Add educational level context
-                    let levelContext = '';
-                    switch (level) {
-                        case 'elementary':
-                            levelContext = "elementary school students (grades 1-5). Use simple language, basic concepts, and engaging explanations.";
-                            break;
-                        case 'middle':
-                            levelContext = "middle school students (grades 6-8). Balance simplicity with introducing more complex concepts.";
-                            break;
-                        case 'highSchool':
-                            levelContext = "high school students (grades 9-12). Include more detailed explanations and subject-appropriate terminology.";
-                            break;
-                        case 'college':
-                            levelContext = "college/university students. Include deeper analysis, more sophisticated concepts, and relevant theories.";
-                            break;
-                        case 'graduate':
-                            levelContext = "graduate/professional students. Include advanced concepts, critical analysis, and specialized terminology.";
-                            break;
-                    }
-                    
-                    prompt += ` Tailor the content for ${levelContext}`;
-                    
-                    // Use Puter AI if available
-                    if (this.isAvailable) {
-                        // Add system message for context
-                        const messages = [
-                            { 
-                                role: "system", 
-                                content: "You are an expert educational content creator specializing in creating high-quality study materials. Your study guides are well-structured, accurate, and tailored to the appropriate educational level." 
-                            },
-                            { role: "user", content: prompt }
-                        ];
-                        
-                        // Use testMode: false for production (will use API credits)
-                        const response = await puter.ai.chat(messages, false, {
-                            model: 'gpt-4o' // Using GPT-4o for higher quality study guides
-                        });
-                        
-                        return response.content || response.message.content;
-                    } else {
-                        // Return fallback study guide if Puter.js is not available
+
+                /**
+                 * Generate a study guide on a specific topic
+                 * @param {string} topic - The topic to create a study guide for
+                 * @param {string} level - Education level (elementary, middle, highSchool, college, graduate)
+                 * @param {string} format - Type of study guide (comprehensive, keyPoints, outline, quiz, flashcards)
+                 * @param {boolean} includeVisuals - Whether to include visual diagrams
+                 * @param {boolean} includeQuestions - Whether to include practice questions
+                 */
+                async generateStudyGuide(
+                    topic,
+                    level = "college",
+                    format = "comprehensive",
+                    includeVisuals = true,
+                    includeQuestions = true,
+                ) {
+                    try {
+                        // Wait for initialization if needed
+                        if (!this.isInitialized) {
+                            await this.initializePuter();
+                        }
+
+                        // Create prompt based on parameters
+                        let prompt = `Create a ${level} level study guide on "${topic}" in ${format} format.`;
+
+                        if (includeVisuals) {
+                            prompt +=
+                                " Include text descriptions of helpful diagrams or visual aids where appropriate.";
+                        }
+
+                        if (includeQuestions) {
+                            prompt +=
+                                " Include practice questions with answers.";
+                        }
+
+                        // Add specific instructions based on format
+                        switch (format) {
+                            case "comprehensive":
+                                prompt +=
+                                    " The guide should be detailed and cover all major aspects of the topic, with examples, explanations, and context.";
+                                break;
+                            case "keyPoints":
+                                prompt +=
+                                    " Focus on the most important key points, facts, and concepts. Keep it concise but comprehensive.";
+                                break;
+                            case "outline":
+                                prompt +=
+                                    " Present the information in a hierarchical outline format with main topics, subtopics, and key details.";
+                                break;
+                            case "quiz":
+                                prompt +=
+                                    " Create a comprehensive quiz with a variety of question types (multiple choice, short answer, etc.) and provide answers.";
+                                break;
+                            case "flashcards":
+                                prompt +=
+                                    " Format as flashcards with clear questions/prompts on one side and detailed answers on the other. Present in markdown format.";
+                                break;
+                        }
+
+                        // Add educational level context
+                        let levelContext = "";
+                        switch (level) {
+                            case "elementary":
+                                levelContext =
+                                    "elementary school students (grades 1-5). Use simple language, basic concepts, and engaging explanations.";
+                                break;
+                            case "middle":
+                                levelContext =
+                                    "middle school students (grades 6-8). Balance simplicity with introducing more complex concepts.";
+                                break;
+                            case "highSchool":
+                                levelContext =
+                                    "high school students (grades 9-12). Include more detailed explanations and subject-appropriate terminology.";
+                                break;
+                            case "college":
+                                levelContext =
+                                    "college/university students. Include deeper analysis, more sophisticated concepts, and relevant theories.";
+                                break;
+                            case "graduate":
+                                levelContext =
+                                    "graduate/professional students. Include advanced concepts, critical analysis, and specialized terminology.";
+                                break;
+                        }
+
+                        prompt += ` Tailor the content for ${levelContext}`;
+
+                        // Use Puter AI if available
+                        if (this.isAvailable) {
+                            // Add system message for context
+                            const messages = [
+                                {
+                                    role: "system",
+                                    content:
+                                        "You are an expert educational content creator specializing in creating high-quality study materials. Your study guides are well-structured, accurate, and tailored to the appropriate educational level.",
+                                },
+                                { role: "user", content: prompt },
+                            ];
+
+                            try {
+                                // Try with testMode: true first (to avoid using API credits if possible)
+                                const response = await puter.ai.chat(
+                                    messages,
+                                    true,
+                                    {
+                                        model: "gpt-4o", // Using GPT-4o for higher quality study guides
+                                    },
+                                );
+
+                                return (
+                                    response.content || response.message.content
+                                );
+                            } catch (error) {
+                                console.warn(
+                                    "Test mode failed for study guide, attempting regular mode:",
+                                    error,
+                                );
+
+                                try {
+                                    // Try with testMode: false as fallback
+                                    const response = await puter.ai.chat(
+                                        messages,
+                                        false,
+                                        {
+                                            model: "gpt-4o", // Using GPT-4o for higher quality study guides
+                                        },
+                                    );
+
+                                    return (
+                                        response.content ||
+                                        response.message.content
+                                    );
+                                } catch (error) {
+                                    console.error(
+                                        "Both test and regular modes failed for study guide:",
+                                        error,
+                                    );
+                                    return this.getFallbackStudyGuide(topic);
+                                }
+                            }
+                        } else {
+                            // Return fallback study guide if Puter.js is not available
+                            console.log(
+                                "Using fallback study guide as Puter.js is not available",
+                            );
+                            return this.getFallbackStudyGuide(topic);
+                        }
+                    } catch (error) {
+                        console.error("Error generating study guide:", error);
                         return this.getFallbackStudyGuide(topic);
                     }
-                } catch (error) {
-                    console.error('Error generating study guide:', error);
-                    return this.getFallbackStudyGuide(topic);
                 }
-            }
-            
-            /**
-             * Summarize a conversation
-             * @param {Array} messages - Array of message objects with role and content
-             */
-            async summarizeConversation(messages) {
-                try {
-                    // Wait for initialization if needed
-                    if (!this.isInitialized) {
-                        await this.initializePuter();
-                    }
-                    
-                    // Create a clean version of messages for the AI
-                    const conversationText = messages
-                        .map(msg => `${msg.role === 'user' ? 'User' : 'Assistant'}: ${msg.content}`)
-                        .join('\n\n');
-                    
-                    const prompt = `Please provide a concise summary of the following conversation, highlighting the main topics discussed, key questions asked, and important information provided:\n\n${conversationText}`;
-                    
-                    // Use Puter AI if available
-                    if (this.isAvailable) {
-                        // Create system message
-                        const aiMessages = [
-                            { 
-                                role: "system", 
-                                content: "You are a skilled summarizer who can extract the most important information from conversations and present it in a clear, organized format." 
-                            },
-                            { role: "user", content: prompt }
-                        ];
-                        
-                        // Use testMode: false for production (will use API credits)
-                        const response = await puter.ai.chat(aiMessages, false, {
-                            model: 'gpt-4o-mini' // Using GPT-4o mini for better cost-performance
-                        });
-                        
-                        return response.content || response.message.content;
-                    } else {
-                        // Return fallback summary if Puter.js is not available
+
+                /**
+                 * Summarize a conversation
+                 * @param {Array} messages - Array of message objects with role and content
+                 */
+                async summarizeConversation(messages) {
+                    try {
+                        // Wait for initialization if needed
+                        if (!this.isInitialized) {
+                            await this.initializePuter();
+                        }
+
+                        // Create a clean version of messages for the AI
+                        const conversationText = messages
+                            .map(
+                                (msg) =>
+                                    `${msg.role === "user" ? "User" : "Assistant"}: ${msg.content}`,
+                            )
+                            .join("\n\n");
+
+                        const prompt = `Please provide a concise summary of the following conversation, highlighting the main topics discussed, key questions asked, and important information provided:\n\n${conversationText}`;
+
+                        // Use Puter AI if available
+                        if (this.isAvailable) {
+                            // Create system message
+                            const aiMessages = [
+                                {
+                                    role: "system",
+                                    content:
+                                        "You are a skilled summarizer who can extract the most important information from conversations and present it in a clear, organized format.",
+                                },
+                                { role: "user", content: prompt },
+                            ];
+
+                            // Use testMode: false for production (will use API credits)
+                            const response = await puter.ai.chat(
+                                aiMessages,
+                                false,
+                                {
+                                    model: "gpt-4o-mini", // Using GPT-4o mini for better cost-performance
+                                },
+                            );
+
+                            return response.content || response.message.content;
+                        } else {
+                            // Return fallback summary if Puter.js is not available
+                            return this.getFallbackSummary();
+                        }
+                    } catch (error) {
+                        console.error("Error summarizing conversation:", error);
                         return this.getFallbackSummary();
                     }
-                } catch (error) {
-                    console.error('Error summarizing conversation:', error);
-                    return this.getFallbackSummary();
                 }
-            }
-            
-            /**
-             * Get a fallback response when the AI service is unavailable
-             */
-            getFallbackResponse(prompt, isQuiz = false) {
-                if (isQuiz) {
-                    return `# Quiz on General Knowledge\n\n1. **Question:** What is the capital of France?\n   - A) London\n   - B) Berlin\n   - C) Paris\n   - D) Madrid\n   **Answer:** C) Paris\n\n2. **Question:** Who wrote "Romeo and Juliet"?\n   - A) Charles Dickens\n   - B) William Shakespeare\n   - C) Jane Austen\n   - D) F. Scott Fitzgerald\n   **Answer:** B) William Shakespeare\n\n3. **Question:** What is the chemical symbol for water?\n   - A) Wa\n   - B) H₂O\n   - C) CO₂\n   - D) O₂\n   **Answer:** B) H₂O\n\n*Note: This is a fallback quiz as the AI service is currently unavailable. Please try again later for a personalized quiz based on your question.*`;
-                }
-                
-                return `I understand you're asking about "${prompt.substring(0, 50)}${prompt.length > 50 ? '...' : ''}"\n\nI apologize, but the AI service is currently unavailable. Here's some general information that might be helpful:\n\n- For scientific topics, you might want to check educational resources like Khan Academy or Coursera\n- For historical questions, resources like History.com or educational documentaries can provide good information\n- For math problems, step-by-step solutions can often be found on sites like Wolfram Alpha\n\nPlease try again later when the service is back online, and I'll be able to provide you with a more specific and detailed response to your question.`;
-            }
-            
-            /**
-             * Get a fallback study guide when the AI service is unavailable
-             */
-            getFallbackStudyGuide(topic) {
-                return `# Study Guide: ${topic}\n\n## Introduction\n\nThis is a placeholder study guide on ${topic}. The AI service is currently unavailable, so a complete, customized study guide cannot be generated at this time.\n\n## Suggested Study Approach\n\n1. **Define the core concepts**\n   - Look up key definitions related to ${topic}\n   - Identify the fundamental principles\n\n2. **Find reliable sources**\n   - Academic textbooks\n   - Peer-reviewed articles\n   - Educational websites (Khan Academy, Coursera, etc.)\n\n3. **Create your own structure**\n   - Main topics and subtopics\n   - Important dates, figures, or formulas\n   - Real-world applications\n\n4. **Test your knowledge**\n   - Create practice questions\n   - Explain concepts in your own words\n   - Apply concepts to new scenarios\n\n## Sample Study Questions\n\n1. What are the key components of ${topic}?\n2. How has ${topic} evolved over time?\n3. What are real-world applications of ${topic}?\n4. How does ${topic} connect to related fields?\n\n*Please try again later when the AI service is back online to get a comprehensive, customized study guide on ${topic}.*`;
-            }
-            
-            /**
-             * Get a fallback summary when the AI service is unavailable
-             */
-            getFallbackSummary() {
-                return `# Conversation Summary\n\n*The AI service is currently unavailable, so a personalized summary of your conversation cannot be generated at this time.*\n\nIn general, a good conversation summary would include:\n\n- Main topics discussed\n- Key questions asked and answers provided\n- Important conclusions or insights\n- Any action items or next steps\n\nYou can manually review your conversation to identify these elements, or try again later when the AI service is back online to get an automated summary.\n\nThank you for your understanding.`;
-            }
-        }
-        
-        /**
-         * dg8ab learn PDF Generator
-         * Utility for exporting study guides and summaries to PDF
-         * Created by Dhruv Gowda (@servers.dg8ab)
-         */
-        class PDFGenerator {
-            constructor() {
-                // Ensure jsPDF is available
-                if (typeof window.jspdf === 'undefined') {
-                    console.warn('jsPDF library not found. PDF export functionality will be limited.');
-                }
-            }
-            
-            /**
-             * Export HTML content to PDF
-             * @param {HTMLElement} element - The HTML element to convert to PDF
-             * @param {Object} options - PDF export options
-             */
-            async exportToPDF(element, options = {}) {
-                try {
-                    const { jsPDF } = window.jspdf;
-                    
-                    if (!jsPDF) {
-                        throw new Error('jsPDF library not available');
+
+                /**
+                 * Get a fallback response when the AI service is unavailable
+                 */
+                getFallbackResponse(prompt, isQuiz = false) {
+                    if (isQuiz) {
+                        return `# Quiz on General Knowledge\n\n1. **Question:** What is the capital of France?\n   - A) London\n   - B) Berlin\n   - C) Paris\n   - D) Madrid\n   **Answer:** C) Paris\n\n2. **Question:** Who wrote "Romeo and Juliet"?\n   - A) Charles Dickens\n   - B) William Shakespeare\n   - C) Jane Austen\n   - D) F. Scott Fitzgerald\n   **Answer:** B) William Shakespeare\n\n3. **Question:** What is the chemical symbol for water?\n   - A) Wa\n   - B) H₂O\n   - C) CO₂\n   - D) O₂\n   **Answer:** B) H₂O\n\n*Note: This is a fallback quiz as the AI service is currently unavailable. The Puter.js AI service may not be accessible in this environment. For full functionality, please try deploying this application to GitHub Pages or another web hosting service.*`;
                     }
-                    
-                    // Set default options
-                    const defaults = {
-                        title: 'dg8ab learn Export',
-                        filename: `dg8ab-learn-${new Date().toISOString().split('T')[0]}.pdf`,
-                        margin: 15,
-                        pageFormat: 'a4',
-                        orientation: 'portrait'
-                    };
-                    
-                    // Merge with provided options
-                    const settings = { ...defaults, ...options };
-                    
-                    // Create new PDF document
-                    const pdf = new jsPDF({
-                        orientation: settings.orientation,
-                        unit: 'mm',
-                        format: settings.pageFormat
-                    });
-                    
-                    // Add title
-                    pdf.setFontSize(18);
-                    pdf.text(settings.title, settings.margin, settings.margin + 10);
-                    
-                    // Add date
-                    pdf.setFontSize(10);
-                    pdf.text(`Generated on ${new Date().toLocaleDateString()}`, settings.margin, settings.margin + 18);
-                    
-                    // Add divider
-                    pdf.setDrawColor(200, 200, 200);
-                    pdf.line(settings.margin, settings.margin + 22, pdf.internal.pageSize.width - settings.margin, settings.margin + 22);
-                    
-                    // Clone the element to avoid modifying the original
-                    const tempContainer = element.cloneNode(true);
-                    
-                    // Remove any welcome message
-                    const welcomeMessage = tempContainer.querySelector('.welcome-message');
-                    if (welcomeMessage) {
-                        welcomeMessage.remove();
+
+                    return `I understand you're asking about "${prompt.substring(0, 50)}${prompt.length > 50 ? "..." : ""}"\n\n**AI Service Status Note**\nThe Puter.js AI service appears to be unavailable in this environment. This is likely due to running the application in a restricted environment or development server. For full AI functionality, please try:\n\n1. Deploying this application to GitHub Pages or another proper web hosting service\n2. Viewing the HTML file directly in a browser using a local server\n3. Ensuring there are no extensions or privacy settings blocking the connection\n\nIn the meantime, here are some general resources that might be helpful for your question:\n\n- For scientific topics, check educational resources like Khan Academy or Coursera\n- For historical questions, resources like History.com or educational documentaries can provide good information\n- For math problems, step-by-step solutions can often be found on sites like Wolfram Alpha\n\nThis is a static fallback response as the AI service can't generate a personalized answer at this time.`;
+                }
+
+                /**
+                 * Get a fallback study guide when the AI service is unavailable
+                 */
+                getFallbackStudyGuide(topic) {
+                    return `# Study Guide: ${topic}\n\n## Introduction\n\nThis is a template study guide on "${topic}". Currently, the AI service needed to generate a customized study guide is unavailable in this environment. For full AI functionality, please try viewing this application on GitHub Pages or another web hosting service.\n\n## Suggested Study Approach\n\n1. **Define the core concepts**\n   - Look up key definitions related to ${topic}\n   - Identify the fundamental principles\n   - Create a glossary of important terms\n\n2. **Find reliable sources**\n   - Academic textbooks\n   - Peer-reviewed articles\n   - Educational websites (Khan Academy, Coursera, etc.)\n   - Video lectures and documentaries\n\n3. **Create your own structure**\n   - Main topics and subtopics\n   - Important dates, figures, or formulas\n   - Real-world applications\n   - Connections to related fields\n\n4. **Test your knowledge**\n   - Create practice questions\n   - Explain concepts in your own words\n   - Apply concepts to new scenarios\n   - Teach the material to someone else\n\n## Sample Study Questions for "${topic}"\n\n1. What are the key components of ${topic}?\n2. How has ${topic} evolved over time?\n3. What are real-world applications of ${topic}?\n4. How does ${topic} connect to related fields?\n5. What are the current debates or areas of research in ${topic}?\n6. Who are the important figures or contributors to ${topic}?\n\n*Note: This is a static template. The Puter.js AI service appears to be unavailable in this environment. For a customized study guide, please try deploying this application to GitHub Pages or viewing it in a standard web browser.*`;
+                }
+
+                /**
+                 * Get a fallback summary when the AI service is unavailable
+                 */
+                getFallbackSummary() {
+                    return `# Conversation Summary\n\n*The AI service is currently unavailable in this environment, so a personalized summary of your conversation cannot be generated at this time.*\n\n## Environment Note\nThe Puter.js AI service may not be accessible due to running the application in a restricted environment. For full AI functionality, please try deploying this application to GitHub Pages or accessing it through a standard web browser.\n\n## Manual Summary Guide\nIn general, a good conversation summary would include:\n\n- Main topics discussed\n- Key questions asked and answers provided\n- Important conclusions or insights\n- Any action items or next steps\n\nYou can manually review your conversation to identify these elements, or try again later when the AI service is accessible.\n\nThank you for your understanding.`;
+                }
+            }
+
+            /**
+             * dg8ab learn PDF Generator
+             * Utility for exporting study guides and summaries to PDF
+             * Created by Dhruv Gowda (@servers.dg8ab)
+             */
+            class PDFGenerator {
+                constructor() {
+                    // Ensure jsPDF is available
+                    if (typeof window.jspdf === "undefined") {
+                        console.warn(
+                            "jsPDF library not found. PDF export functionality will be limited.",
+                        );
                     }
-                    
-                    // Convert to HTML content
-                    let htmlContent = '';
-                    
-                    // Get all message elements
-                    const messages = tempContainer.querySelectorAll('.message');
-                    messages.forEach(msg => {
-                        const sender = msg.querySelector('.message-sender').textContent;
-                        const time = msg.querySelector('.message-time').textContent;
-                        const text = msg.querySelector('.message-text').innerHTML;
-                        
-                        htmlContent += `
+                }
+
+                /**
+                 * Export HTML content to PDF
+                 * @param {HTMLElement} element - The HTML element to convert to PDF
+                 * @param {Object} options - PDF export options
+                 */
+                async exportToPDF(element, options = {}) {
+                    try {
+                        const { jsPDF } = window.jspdf;
+
+                        if (!jsPDF) {
+                            throw new Error("jsPDF library not available");
+                        }
+
+                        // Set default options
+                        const defaults = {
+                            title: "dg8ab learn Export",
+                            filename: `dg8ab-learn-${new Date().toISOString().split("T")[0]}.pdf`,
+                            margin: 15,
+                            pageFormat: "a4",
+                            orientation: "portrait",
+                        };
+
+                        // Merge with provided options
+                        const settings = { ...defaults, ...options };
+
+                        // Create new PDF document
+                        const pdf = new jsPDF({
+                            orientation: settings.orientation,
+                            unit: "mm",
+                            format: settings.pageFormat,
+                        });
+
+                        // Add title
+                        pdf.setFontSize(18);
+                        pdf.text(
+                            settings.title,
+                            settings.margin,
+                            settings.margin + 10,
+                        );
+
+                        // Add date
+                        pdf.setFontSize(10);
+                        pdf.text(
+                            `Generated on ${new Date().toLocaleDateString()}`,
+                            settings.margin,
+                            settings.margin + 18,
+                        );
+
+                        // Add divider
+                        pdf.setDrawColor(200, 200, 200);
+                        pdf.line(
+                            settings.margin,
+                            settings.margin + 22,
+                            pdf.internal.pageSize.width - settings.margin,
+                            settings.margin + 22,
+                        );
+
+                        // Clone the element to avoid modifying the original
+                        const tempContainer = element.cloneNode(true);
+
+                        // Remove any welcome message
+                        const welcomeMessage =
+                            tempContainer.querySelector(".welcome-message");
+                        if (welcomeMessage) {
+                            welcomeMessage.remove();
+                        }
+
+                        // Convert to HTML content
+                        let htmlContent = "";
+
+                        // Get all message elements
+                        const messages =
+                            tempContainer.querySelectorAll(".message");
+                        messages.forEach((msg) => {
+                            const sender =
+                                msg.querySelector(
+                                    ".message-sender",
+                                ).textContent;
+                            const time =
+                                msg.querySelector(".message-time").textContent;
+                            const text =
+                                msg.querySelector(".message-text").innerHTML;
+
+                            htmlContent += `
                             <div style="margin-bottom: 15px; page-break-inside: avoid;">
                                 <div style="font-weight: bold;">${sender} <span style="font-weight: normal; font-size: 10px;">(${time})</span></div>
                                 <div style="margin-top: 5px;">${text}</div>
                             </div>
                         `;
-                    });
-                    
-                    // Add content to PDF starting after the header
-                    pdf.html(htmlContent, {
-                        callback: function(pdf) {
-                            // Add page numbers
-                            const totalPages = pdf.internal.getNumberOfPages();
-                            for (let i = 1; i <= totalPages; i++) {
-                                pdf.setPage(i);
-                                pdf.setFontSize(10);
-                                pdf.text(`Page ${i} of ${totalPages}`, pdf.internal.pageSize.width / 2, pdf.internal.pageSize.height - 10, {
-                                    align: 'center'
-                                });
-                            }
-                            
-                            // Add footer
-                            for (let i = 1; i <= totalPages; i++) {
-                                pdf.setPage(i);
-                                pdf.setFontSize(8);
-                                pdf.text('Generated by dg8ab learn - AI-Powered Study Assistant', settings.margin, pdf.internal.pageSize.height - 10);
-                            }
-                            
-                            // Save the PDF
-                            pdf.save(settings.filename);
-                        },
-                        x: settings.margin,
-                        y: settings.margin + 30
-                    });
-                    
-                    return true;
-                } catch (error) {
-                    console.error('Error generating PDF:', error);
-                    throw error;
+                        });
+
+                        // Add content to PDF starting after the header
+                        pdf.html(htmlContent, {
+                            callback: function (pdf) {
+                                // Add page numbers
+                                const totalPages =
+                                    pdf.internal.getNumberOfPages();
+                                for (let i = 1; i <= totalPages; i++) {
+                                    pdf.setPage(i);
+                                    pdf.setFontSize(10);
+                                    pdf.text(
+                                        `Page ${i} of ${totalPages}`,
+                                        pdf.internal.pageSize.width / 2,
+                                        pdf.internal.pageSize.height - 10,
+                                        {
+                                            align: "center",
+                                        },
+                                    );
+                                }
+
+                                // Add footer
+                                for (let i = 1; i <= totalPages; i++) {
+                                    pdf.setPage(i);
+                                    pdf.setFontSize(8);
+                                    pdf.text(
+                                        "Generated by dg8ab learn - AI-Powered Study Assistant",
+                                        settings.margin,
+                                        pdf.internal.pageSize.height - 10,
+                                    );
+                                }
+
+                                // Save the PDF
+                                pdf.save(settings.filename);
+                            },
+                            x: settings.margin,
+                            y: settings.margin + 30,
+                        });
+
+                        return true;
+                    } catch (error) {
+                        console.error("Error generating PDF:", error);
+                        throw error;
+                    }
+                }
+
+                /**
+                 * Set up event listeners for PDF export buttons
+                 */
+                setupPDFExportButtons() {
+                    // This method can be expanded to add event listeners for PDF export buttons
+                    // Currently, the main application handles the export button click event
+                }
+
+                /**
+                 * Show a notification to the user
+                 * @param {string} message - The message to display
+                 * @param {string} type - The type of notification (info, success, error)
+                 */
+                showNotification(message, type = "info") {
+                    const notification =
+                        document.getElementById("notification");
+                    if (!notification) return;
+
+                    notification.textContent = message;
+                    notification.className = "notification";
+
+                    // Add type class
+                    if (type) {
+                        notification.classList.add(type);
+                    }
+
+                    // Show notification
+                    notification.classList.add("show");
+
+                    // Hide after 3 seconds
+                    setTimeout(() => {
+                        notification.classList.remove("show");
+                    }, 3000);
                 }
             }
-            
-            /**
-             * Set up event listeners for PDF export buttons
-             */
-            setupPDFExportButtons() {
-                // This method can be expanded to add event listeners for PDF export buttons
-                // Currently, the main application handles the export button click event
-            }
-            
-            /**
-             * Show a notification to the user
-             * @param {string} message - The message to display
-             * @param {string} type - The type of notification (info, success, error)
-             */
-            showNotification(message, type = "info") {
-                const notification = document.getElementById('notification');
-                if (!notification) return;
-                
-                notification.textContent = message;
-                notification.className = 'notification';
-                
-                // Add type class
-                if (type) {
-                    notification.classList.add(type);
-                }
-                
-                // Show notification
-                notification.classList.add('show');
-                
-                // Hide after 3 seconds
-                setTimeout(() => {
-                    notification.classList.remove('show');
-                }, 3000);
-            }
-        }
-        
-        // Initialize the application when the DOM is fully loaded
-        document.addEventListener('DOMContentLoaded', () => {
-            window.app = new DG8ABLearn();
-        });
-    </script>
-</body>
+
+            // Initialize the application when the DOM is fully loaded
+            document.addEventListener("DOMContentLoaded", () => {
+                window.app = new DG8ABLearn();
+            });
+        </script>
+    </body>
 </html>
+
